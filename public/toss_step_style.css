@@ -638,6 +638,12 @@ button {
     color: var(--toss-text-main);
 }
 
+/* Word-break strategy to prevent awkward wrapping (e.g. 대상물(고객명) 이 잘리지 않게) */
+body, .stat-label, .stat-value, .data-table td, .data-table th, .cond-label {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+}
+
 /* --- Mobile Specific Overrides --- */
 @media (max-width: 768px) {
     .container {
@@ -658,3 +664,36 @@ button {
         text-align: right;
     }
 }
+
+@media (max-width: 500px) {
+    /* Step 2 Conditions Panel Adjustments */
+    .cond-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .cond-field {
+        text-align: center;
+    }
+
+    /* Step 2 Summary Card Adjustments */
+    .stat-card {
+        padding: 0.8rem 1rem;
+    }
+    .summary-grid > div[style*="display:flex"] {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* Step 3 Data Table Adjustments */
+    .data-table {
+        font-size: 0.8rem;
+    }
+    .data-table th, .data-table td {
+        padding: 0.6rem 0.2rem;
+    }
+    
+    .card-title {
+        font-size: 1.15rem;
+    }
+}
+
