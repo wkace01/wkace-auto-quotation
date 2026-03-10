@@ -1,68 +1,30 @@
-// ---- Master Data ----
-// 출처: 정보통신 견적 조건표 (이미지 기준)
-// monthlyAppointment: 선임위탁 월 단가, yearlyAppointment: 선임위탁 년간
-// yearlyMaintenance: 유지점검 년간, yearlyInspection: 성능점검 년간
-
-const QUOTATION_CONDITIONS = [
-    // 5,000이상 ~ 10,000미만: 초급
-    { area: 5000, grade: "초급", monthlyAppointment: 80000, yearlyAppointment: 960000, yearlyMaintenance: 360000, yearlyInspection: 1080000, inspectionWorkers: 4, maintenanceWorkers: 4 },
-    // 10,000이상 ~ 15,000미만: 초급
-    { area: 10000, grade: "초급", monthlyAppointment: 80000, yearlyAppointment: 960000, yearlyMaintenance: 405000, yearlyInspection: 1335000, inspectionWorkers: 4, maintenanceWorkers: 4 },
-    // 15,000이상 ~ 30,000미만: 중급
-    { area: 15000, grade: "중급", monthlyAppointment: 130000, yearlyAppointment: 1560000, yearlyMaintenance: 495000, yearlyInspection: 1245000, inspectionWorkers: 6, maintenanceWorkers: 6 },
-    // 30,000이상 ~ 60,000미만: 고급
-    { area: 30000, grade: "고급", monthlyAppointment: 150000, yearlyAppointment: 1800000, yearlyMaintenance: 600000, yearlyInspection: 1600000, inspectionWorkers: 8, maintenanceWorkers: 8 },
-    // 60,000이상 ~ 150,000미만: 특급
-    { area: 60000, grade: "특급", monthlyAppointment: 180000, yearlyAppointment: 2160000, yearlyMaintenance: 1044000, yearlyInspection: 3756000, inspectionWorkers: 10, maintenanceWorkers: 10 },
-    // 150,000이상: 특급
-    { area: 150000, grade: "특급", monthlyAppointment: 200000, yearlyAppointment: 2400000, yearlyMaintenance: 1035000, yearlyInspection: 3465000, inspectionWorkers: 10, maintenanceWorkers: 10 }
-];
-
-const ADJUSTMENT_COEFFICIENTS = [
-    // 출처: 연면적에 따른 조정계수 표 (이미지 기준)
-    { area: 5000, coef: 1.15 },  // 5,000  이상 ~ 10,000 미만
-    { area: 10000, coef: 1.30 },  // 10,000 이상 ~ 15,000 미만
-    { area: 15000, coef: 1.45 },  // 15,000 이상 ~ 20,000 미만
-    { area: 20000, coef: 1.60 },  // 20,000 이상 ~ 25,000 미만
-    { area: 25000, coef: 1.75 },  // 25,000 이상 ~ 30,000 미만
-    { area: 30000, coef: 1.90 },  // 30,000 이상 ~ 35,000 미만
-    { area: 35000, coef: 2.05 },  // 35,000 이상 ~ 40,000 미만
-    { area: 40000, coef: 2.20 },  // 40,000 이상 ~ 45,000 미만
-    { area: 45000, coef: 2.35 },  // 45,000 이상 ~ 50,000 미만
-    { area: 50000, coef: 2.50 },  // 50,000 이상 ~ 55,000 미만
-    { area: 55000, coef: 2.65 },  // 55,000 이상 ~ 60,000 미만
-    { area: 60000, coef: 2.80 },  // 60,000 이상
-];
-
-const SALES_MANAGERS = [
-    { name: "박진철", phone: "010-7130-8285" },
-    { name: "임학빈", phone: "010-4259-2044" },
-    { name: "공대은", phone: "010-2486-8571" },
-    { name: "이태평", phone: "010-3855-3416" },
-    { name: "전무승", phone: "010-5269-5357" },
-    { name: "김태훈", phone: "010-5393-1308" },
-    { name: "이정국", phone: "010-5474-3414" },
-    { name: "이승학", phone: "010-2395-5603" },
-    { name: "김학수", phone: "010-3255-2473" },
-    { name: "김찬진", phone: "010-4101-5891" },
-    { name: "신홍민", phone: "010-6550-7169" },
-    { name: "한춘교", phone: "010-9162-2995" },
-    { name: "박민수", phone: "010-4458-3472" },
-    { name: "이우현", phone: "010-2494-4756" },
-    { name: "고윤성", phone: "010-2871-5485" }
-];
+// ---- Master Data (Linked from constants.js) ----
+const { 
+    QUOTATION_CONDITIONS, 
+    ADJUSTMENT_COEFFICIENTS, 
+    SALES_MANAGERS, 
+    GRADE_STYLES, 
+    GRADE_WAGES, 
+    GRADE_ORDER,
+    COND_RANGE_LABELS
+} = window.CONSTANTS;
 
 // ---- State ----
 const state = {
     customerName: "",
+    maintenanceFrequency: "2회",
+    appointmentFrequency: "12개월",
     floorArea: 0,
-    address: "",
+    address: "",      // UI 표시용 (참고용)
+    roadAddress: "",  // 에어테이블 저장용 (표준 도로명)
     buildingName: "",
+    jibunAddress: "",
+    zonecode: "",
     purpose: "",
     useAprDay: "",
     manager: "",
-    managerPosition: "",
     managerPhone: "",
+    managerPosition: "",
     managerMobile: "",
     managerEmail: "",
     salesManager: "",
@@ -85,22 +47,7 @@ const state = {
     }
 };
 
-// ---- Grade Classification ----
-const GRADE_STYLES = {
-    '초급': { color: '#2563eb', label: '초급' },
-    '중급': { color: '#16a34a', label: '중급' },
-    '고급': { color: '#d97706', label: '고급' },
-    '특급': { color: '#dc2626', label: '특급' }
-};
-
-// ---- 정보통신기술자 등급별 노임단가 (원/인·일) ----
-const GRADE_WAGES = {
-    '특급': 330713,
-    '고급': 301470,
-    '중급': 272298,
-    '초급': 234973,
-};
-const GRADE_ORDER = ['특급', '고급', '중급', '초급'];
+// (Redundant constants removed, using window.CONSTANTS)
 
 // ---- 인건비 산출 헬퍼 ----
 // workers: 투입인원, grade: 건물등급 → 해당 등급만 인원 배정, 나머지 0
@@ -210,14 +157,7 @@ function calculate() {
 }
 
 // ―― Condition Panel ――
-const COND_RANGE_LABELS = {
-    5000: '5,000 ≤ 연면적 < 10,000 ㎡',
-    10000: '10,000 ≤ 연면적 < 15,000 ㎡',
-    15000: '15,000 ≤ 연면적 < 30,000 ㎡',
-    30000: '30,000 ≤ 연면적 < 60,000 ㎡',
-    60000: '60,000 ≤ 연면적 < 150,000 ㎡',
-    150000: '150,000㎡ 이상',
-};
+// (Redundant COND_RANGE_LABELS removed)
 
 function getEffectiveCond(condition) {
     // override가 있으면 사용자 값, 없으면 기본값 사용
@@ -270,6 +210,12 @@ function updateConditionPanel(condition) {
             el.value = item.val;
         }
     });
+
+    const mFreq = document.getElementById('cond-maintenance-frequency');
+    if (mFreq && document.activeElement !== mFreq) mFreq.value = state.maintenanceFrequency;
+    const aFreq = document.getElementById('cond-appointment-frequency');
+    if (aFreq && document.activeElement !== aFreq) aFreq.value = state.appointmentFrequency;
+
     document.getElementById('cond-discount-display').textContent = state.discount + '%';
 
     const subtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
@@ -351,11 +297,11 @@ function renderTabs() {
 
     document.getElementById('tbl-q-total').innerHTML = `
         <tr><td>대상물 (고객명)</td><td>${state.customerName || '-'}</td><td></td></tr>
-        <tr><td>주소</td><td>${state.address || '-'}</td><td></td></tr>
         <tr><td>연면적</td><td>${state.floorArea.toLocaleString()} ㎡</td><td>등급: <span style="font-weight:600; color:var(--toss-blue);">${state.results.grade}</span></td></tr>
+        <tr><td>담당자 정보</td><td>${state.manager || '-'} ${state.managerPosition ? '(' + state.managerPosition + ')' : ''}</td><td>${state.managerPhone || '-'} ${state.managerMobile ? ' / ' + state.managerMobile : ''}</td></tr>
         <tr><td>성능점검</td><td>₩ ${state.results.costs.inspection.toLocaleString()}</td><td>연 1회</td></tr>
-        <tr><td>유지점검</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td><td>연 2회</td></tr>
-        <tr><td>위탁선임</td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td><td>12개월</td></tr>
+        <tr><td>유지점검</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td><td>${state.maintenanceFrequency}</td></tr>
+        <tr><td>위탁선임</td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td><td>${state.appointmentFrequency}</td></tr>
         ${discountRow}
         <tr style="font-weight:700; color:var(--toss-blue)"><td>최종 합계 (연간)</td><td>₩ ${state.results.costs.yearly.toLocaleString()}</td><td>부가세 별도</td></tr>
         <tr style="font-weight:600"><td>월 납부액</td><td>₩ ${state.results.costs.monthly.toLocaleString()}</td><td>÷12</td></tr>
@@ -642,6 +588,7 @@ async function fetchBuildingInfo() {
         panelEl.style.display = 'block';
         statusEl.style.background = '#f0fdf4';
         statusEl.style.color = '#15803d';
+        statusEl.style.textAlign = 'center';
         statusEl.innerHTML = '<span class="status-msg-pc">✅ 건축물대장 조회 성공! "✅ 이 값으로 적용" 버튼으로 값을 입력하세요.</span>' + 
                              '<span class="status-msg-mobile">✅ 건축물대장 조회 성공!<br>"✅ 이 값으로 적용" 버튼으로<br>값을 입력하세요.</span>';
     } catch (err) {
@@ -656,13 +603,18 @@ async function fetchBuildingInfo() {
 
 // ---- Kakao Address Search (on page load) ----
 function initKakaoSearch() {
-    window.wkCommon.initKakaoPostcode('kakao-embed-container', (roadAddr, buildingName) => {
+    window.wkCommon.initKakaoPostcode('kakao-embed-container', (roadAddr, buildingName, data) => {
         document.getElementById('address').value = roadAddr;
         if (buildingName) document.getElementById('customer-name').value = buildingName;
 
         state.address = roadAddr;
         state.buildingName = buildingName || '';
         state.customerName = buildingName || '';
+        if (data) {
+            state.roadAddress = data.roadAddress || roadAddr; // 표준 도로명 우선 저장
+            state.jibunAddress = data.jibunAddress || data.autoJibunAddress || '';
+            state.zonecode = data.zonecode || '';
+        }
 
         // Proceed to Step 2 automatically
         goToStep(2);
@@ -752,48 +704,76 @@ document.getElementById('use-apr-day').addEventListener('input', (e) => {
     state.useAprDay = e.target.value;
 });
 
+document.getElementById('manager').addEventListener('input', (e) => {
+    state.manager = e.target.value;
+});
+
 // ---- 전화번호 자동 포맷팅 유틸 ----
 function formatPhone(value) {
+    // 숫자만 추출, 최대 11자리
     const digits = value.replace(/\D/g, '').slice(0, 11);
     const len = digits.length;
+
     if (digits.startsWith('02')) {
-        if (len < 3) return digits;
-        if (len < 6) return digits.slice(0, 2) + '-' + digits.slice(2);
-        if (len < 10) return digits.slice(0, 2) + '-' + digits.slice(2, 5) + '-' + digits.slice(5);
-        return digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
+        // 서울 (02): 02-XXXX-XXXX 또는 02-XXX-XXXX
+        if (len < 3) return digits;                                                    // 02
+        if (len < 6) return digits.slice(0, 2) + '-' + digits.slice(2);               // 02-XXX
+        if (len < 10) return digits.slice(0, 2) + '-' + digits.slice(2, 5) + '-' + digits.slice(5); // 02-XXX-XXXX
+        return digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);    // 02-XXXX-XXXX
     } else {
-        if (len < 4) return digits;
-        if (len < 7) return digits.slice(0, 3) + '-' + digits.slice(3);
-        if (len < 11) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
-        return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+        // 010 / 031 등 3자리 국번
+        if (len < 4) return digits;                                                    // 010
+        if (len < 7) return digits.slice(0, 3) + '-' + digits.slice(3);               // 010-XXXX
+        if (len < 11) return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6); // 010-XXX-XXXX
+        return digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);    // 010-XXXX-XXXX
     }
 }
 
-// 필드 이벤트 리스너 등록 후 state 동기화
-const fieldMap = {
-    'manager': 'manager',
-    'manager-position': 'managerPosition',
-    'manager-phone': 'managerPhone',
-    'manager-mobile': 'managerMobile',
-    'manager-email': 'managerEmail'
-};
+const managerPhoneEl = document.getElementById('manager-phone');
+if (managerPhoneEl) {
+    managerPhoneEl.addEventListener('input', function () {
+        const pos = this.selectionStart;             // 입력 전 커서 위치
+        const before = this.value;
+        const formatted = formatPhone(this.value);
 
-Object.entries(fieldMap).forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    if (el) {
-        el.addEventListener('input', (e) => {
-            let val = e.target.value;
-            if (id.includes('phone') || id.includes('mobile')) {
-                const pos = el.selectionStart;
-                const before = el.value;
-                val = formatPhone(val);
-                if (before !== val) {
-                    el.value = val;
-                }
-            }
-            state[key] = val;
-        });
-    }
+        // 포맷팅 결과가 다를 때만 덮어쓰기 (그렇지 않으면 특정 환경에서 입력이 막히거나 씹히는 현상 발생)
+        if (before !== formatted) {
+            this.value = formatted;
+            // 커서 위치 보정: 추가된 하이픈 수 만큼 앞으로 밀기
+            const added = formatted.length - before.length;
+            const newPos = Math.max(0, pos + added);
+            this.setSelectionRange(newPos, newPos);
+        }
+        state.managerPhone = formatted;
+    });
+} else {
+    console.error('[디버그] #manager-phone 요소를 찾을 수 없습니다.');
+}
+
+const managerMobileEl = document.getElementById('manager-mobile');
+if (managerMobileEl) {
+    managerMobileEl.addEventListener('input', function () {
+        const pos = this.selectionStart;
+        const before = this.value;
+        const formatted = formatPhone(this.value);
+        if (before !== formatted) {
+            this.value = formatted;
+            const added = formatted.length - before.length;
+            const newPos = Math.max(0, pos + added);
+            this.setSelectionRange(newPos, newPos);
+        }
+        state.managerMobile = formatted;
+    });
+}
+
+document.getElementById('manager-position').addEventListener('input', (e) => {
+    state.managerPosition = e.target.value;
+    calculate();
+});
+
+document.getElementById('manager-email').addEventListener('input', (e) => {
+    state.managerEmail = e.target.value;
+    calculate();
 });
 
 // 영업 담당자 변경 시 연락처 자동 입력
@@ -863,6 +843,15 @@ Object.entries(COND_INPUT_MAP).forEach(([elId, stateKey]) => {
     }
 });
 
+document.getElementById('cond-maintenance-frequency').addEventListener('input', (e) => {
+    state.maintenanceFrequency = e.target.value;
+    updateUI();
+});
+document.getElementById('cond-appointment-frequency').addEventListener('input', (e) => {
+    state.appointmentFrequency = e.target.value;
+    updateUI();
+});
+
 
 // Reset: show address search again (Step 1)
 document.getElementById('btn-reset-addr').addEventListener('click', () => {
@@ -875,6 +864,8 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     state.useAprDay = "";
     state.managerPhone = "";
     state.salesManager = "";
+    state.maintenanceFrequency = "2회";
+    state.appointmentFrequency = "12개월";
     state.condOverride = {};
     state.itemToggles = { appointment: true, maintenance: true, inspection: true };
     state._lastConditionArea = -1;
@@ -1047,40 +1038,39 @@ function setPdfBtnEnabled(enabled) {
     pdfBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
 }
 
-// PDF 저장 버튼 - 에어테이블 저장 및 PDF 업로드 통합 브랜치
+// PDF 저장 버튼 - LibreOffice 서버 호출
 document.getElementById('btn-save-pdf').addEventListener('click', async () => {
+    const mapping = generateMapping();
     const btn = document.getElementById('btn-save-pdf');
 
+    // 연면적 유효성 검사
     if (!state.floorArea || state.floorArea < 5000) {
         showStatusBar('⚠️ 연면적을 먼저 입력해주세요. (5,000㎡ 이상)', 'warning');
         return;
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 시스템 저장 및 PDF 생성 중...';
-    showStatusBar('<i class="fas fa-spinner fa-spin"></i> 1단계: 에어테이블 고객/견적 데이터 저장 중...', 'info');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PDF 생성 중...';
+    showStatusBar('<i class="fas fa-spinner fa-spin"></i> Excel 데이터 입력 및 LibreOffice PDF 변환 중... (약 10초 소요)', 'info');
 
     try {
-        // 1. 에어테이블 저장 및 서버측 PDF 업로드 자동 실행
-        // (airtable_service.js 내부에서 /upload-pdf-to-airtable 호출 포함됨)
-        const result = await window.airtableService.saveQuotation(state);
-        
-        showStatusBar('<i class="fas fa-check-circle"></i> 2단계: 에어테이블 저장 완료! 최종 PDF 다운로드 준비 중...', 'success');
-
-        // 2. 브라우저에서 사용할 PDF 다운로드 별도 실행
-        const mapping = generateMapping();
-        const res = await fetch(`${BACKEND_URL}/generate-pdf`, {
+        // 1. PDF 서버 호출 (다운로드용)
+        const pdfRes = await fetch(PDF_SERVER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(mapping)
         });
 
-        if (!res.ok) throw new Error('PDF 생성 서버 오류');
+        if (!pdfRes.ok) {
+            const errData = await pdfRes.json().catch(() => ({ error: pdfRes.statusText }));
+            throw new Error(errData.error || `PDF 서버 오류 (${pdfRes.status})`);
+        }
 
-        const blob = await res.blob();
+        // 2. PDF 다운로드 처리
+        const blob = await pdfRes.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const disposition = res.headers.get('Content-Disposition') || '';
+        const disposition = pdfRes.headers.get('Content-Disposition') || '';
         const nameMatch = disposition.match(/filename\*=UTF-8''([^;]+)/);
         const fileName = nameMatch ? decodeURIComponent(nameMatch[1]) : `${state.customerName || '견적서'}_견적서.pdf`;
 
@@ -1091,17 +1081,39 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> 저장 및 다운로드 완료';
-        showStatusBar(`✅ 에어테이블 등록 및 <b>${fileName}</b> 다운로드 완료!`, 'success');
+        // 3. 에어테이블 저장 및 PDF 업로드 (통합 동작)
+        showStatusBar('<i class="fas fa-spinner fa-spin"></i> 에어테이블 DB 기록 및 PDF 업로드 중...', 'info');
+        try {
+            const airResult = await window.airtableService.saveQuotation(state);
+            showStatusBar(`✅ <b>${fileName}</b> 다운로드 및 에어테이블 저장 성공!`, 'success');
+            
+            // 관리자 도구용 최근 기록 업데이트
+            if (airResult && airResult.quotationId) {
+                const recordUrl = `https://airtable.com/appFEZaTg3yZU1QwW/tbloif1mheDqaRRuR/${airResult.quotationId}`;
+                const recentEl = document.getElementById('status-recent-record');
+                if (recentEl) {
+                    recentEl.innerHTML = `<a href="${recordUrl}" target="_blank" style="color:var(--toss-blue); font-weight:600; text-decoration:none;">보기 <i class="fas fa-external-link-alt" style="font-size:0.75rem;"></i></a>`;
+                }
+            }
+        } catch (airErr) {
+            console.error('[Airtable Integration Error]:', airErr);
+            showStatusBar(`✅ PDF는 생성되었으나, 에어테이블 저장에 실패했습니다: ${airErr.message}`, 'warning');
+        }
 
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> 견적서 발행 완료';
+        
         setTimeout(() => {
             btn.innerHTML = '<i class="fas fa-file-pdf"></i> 견적서 PDF 생성 및 저장';
             btn.disabled = false;
         }, 3000);
 
     } catch (err) {
-        console.error('실행 오류:', err);
-        showStatusBar(`❌ 오류: ${err.message}`, 'error');
+        console.error('견적 발행 오류:', err);
+        let msg = err.message;
+        if (err.message.includes('fetch') || err.message.includes('Failed to fetch')) {
+            msg = '서버에 연결할 수 없습니다. 터미널에서 <code>node server.js</code>를 확인해주세요.';
+        }
+        showStatusBar(`❌ 오류: ${msg}`, 'error');
         btn.innerHTML = '<i class="fas fa-file-pdf"></i> 견적서 PDF 생성 및 저장';
         btn.disabled = false;
     }
@@ -1109,15 +1121,98 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
 
 
 
-// 2. JSON 매핑 확인 버튼 로직
-document.getElementById('btn-view-json').addEventListener('click', () => {
-    const mapping = generateMapping();
-    document.getElementById('json-result').textContent = JSON.stringify(mapping, null, 2);
-    document.getElementById('modal-json').style.display = 'flex';
+// 에어테이블 저장 버튼 로직 (통합되었지만 버튼이 남아있을 경우를 대비해 유지 또는 기능 연결)
+const btnAirtable = document.getElementById('btn-save-airtable');
+if (btnAirtable) {
+    btnAirtable.style.display = 'none'; // 통합되었으므로 UI에서 숨김 (디자인 유지 원칙에 따라 코드로 제어)
+}
+const btnJson = document.getElementById('btn-view-json');
+if (btnJson) btnJson.style.display = 'none';
+
+// 관리자 도구(JSON 확인) 트리거
+const adminTrigger = document.getElementById('admin-trigger');
+if (adminTrigger) {
+    adminTrigger.addEventListener('click', async () => {
+        // 모달 열기
+        document.getElementById('modal-admin').style.display = 'flex';
+        
+        // JSON 데이터 갱신
+        const mapping = generateMapping();
+        document.getElementById('json-result').textContent = JSON.stringify(mapping, null, 2);
+        
+        // 서버 상태 체크
+        const statusEl = document.getElementById('status-pdf-server');
+        statusEl.textContent = '확인 중...';
+        statusEl.style.color = 'var(--toss-text-muted)';
+        
+        try {
+            const res = await fetch(`${BACKEND_URL}/health`);
+            if (res.ok) {
+                statusEl.textContent = '정상 (Connected)';
+                statusEl.style.color = '#15803d';
+            } else {
+                throw new Error();
+            }
+        } catch {
+            statusEl.textContent = '연결 실패 (Disconnected)';
+            statusEl.style.color = '#b91c1c';
+        }
+    });
+}
+
+// 관리자 탭 전환
+document.querySelectorAll('[data-admin-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.adminTab;
+        
+        // 버튼 활성화 처리
+        btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // 콘텐츠 표시 처리
+        document.querySelectorAll('.admin-tab-content').forEach(content => {
+            content.style.display = (content.id === targetTab) ? 'flex' : 'none';
+        });
+    });
 });
 
-document.getElementById('btn-modal-close').addEventListener('click', () => {
-    document.getElementById('modal-json').style.display = 'none';
+// 관리자: 수동 동기화
+document.getElementById('btn-admin-manual-sync').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-admin-manual-sync');
+    btn.disabled = true;
+    btn.textContent = '전송 중...';
+    
+    try {
+        const airResult = await window.airtableService.saveQuotation(state);
+        alert('에어테이블 수동 동기화가 성공했습니다.');
+        
+        // 최근 기록 링크 업데이트
+        if (airResult && airResult.quotationId) {
+            const recordUrl = `https://airtable.com/appFEZaTg3yZU1QwW/tbloif1mheDqaRRuR/${airResult.quotationId}`;
+            const recentEl = document.getElementById('status-recent-record');
+            if (recentEl) {
+                recentEl.innerHTML = `<a href="${recordUrl}" target="_blank" style="color:var(--toss-blue); font-weight:600; text-decoration:none;">보기 <i class="fas fa-external-link-alt" style="font-size:0.75rem;"></i></a>`;
+            }
+        }
+    } catch (err) {
+        alert('동기화 실패: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '에어테이블 수동 동기화 실행';
+    }
+});
+
+// 관리자: 강제 초기화 (기존 리셋 버튼 기능 활용)
+document.getElementById('btn-admin-reset').addEventListener('click', () => {
+    if (confirm('정말로 모든 입력 데이터를 초기화하고 1단계로 돌아가시겠습니까?')) {
+        document.getElementById('btn-reset-addr').click();
+        document.getElementById('modal-admin').style.display = 'none';
+        showStatusBar('시스템이 성공적으로 초기화되었습니다.', 'success');
+    }
+});
+
+document.getElementById('btn-admin-close').addEventListener('click', () => {
+    document.getElementById('modal-admin').style.display = 'none';
 });
 
 // ---- Initialize ----
@@ -1134,37 +1229,12 @@ function _startKakaoSearch() {
 }
 
 if (window._kakaoPostcodeLoaded) {
+    // 스크립트가 이미 로드 완료된 경우 (즉시 실행)
     _startKakaoSearch();
 } else {
+    // 아직 로드 중인 경우: index.html의 onload 콜백 등록
     window._onKakaoPostcodeReady = _startKakaoSearch;
 }
-
-// ---- 서버 상태 체크 (Admin Badge) ----
-async function checkServerHealth() {
-    const badge = document.getElementById('remote-status-badge');
-    const text = document.getElementById('env-status-text');
-    if (!badge || !text) return;
-
-    try {
-        const res = await fetch(`${BACKEND_URL}/health`);
-        const data = await res.json();
-        
-        if (data.status === 'ok' && data.envCheck) {
-            badge.style.background = '#dcfce7';
-            badge.style.color = '#166534';
-            text.innerHTML = 'Airtable 연동 중 (Security Active)';
-        } else {
-            badge.style.background = '#fee2e2';
-            badge.style.color = '#991b1b';
-            text.innerHTML = 'Airtable 키 미설정 (Check Variables)';
-        }
-    } catch (err) {
-        badge.style.background = '#f3f4f6';
-        text.innerHTML = 'Local Server Mode';
-    }
-}
-
-checkServerHealth();
 
 // ---- Adjuster Buttons (+/-) ----
 document.querySelectorAll('.btn-adj').forEach(btn => {
