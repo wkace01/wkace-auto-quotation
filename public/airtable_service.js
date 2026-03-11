@@ -23,8 +23,8 @@ window.airtableService = {
      */
     saveQuotation: async (state) => {
         try {
-            console.log('[Airtable] Starting integrated save process...');
-            
+            console.log('[Airtable] Starting save process...');
+
             // 1) 고객 Upsert
             const customerId = await window.airtableService.upsertCustomer(state);
 
@@ -35,28 +35,8 @@ window.airtableService = {
             const quotationResult = await window.airtableService.createQuotation(customerId, state);
             const quotationId = quotationResult.id;
 
-            // 3) PDF 첨부 업로드 - fire-and-forget (고객/견적 저장과 무관하게 백그라운드 실행)
-            // await 하지 않으므로 네트워크 지연/타임아웃이 saveQuotation 전체에 영향 없음
-            const mapping = window.generateMapping ? window.generateMapping() : null;
-            if (mapping) {
-                fetch(`${BACKEND_URL}/upload-pdf-to-airtable`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        mapping,
-                        airtableInfo: {
-                            baseId: AIRTABLE_CONFIG.BASE_ID,
-                            recordId: quotationId
-                        }
-                    })
-                })
-                .then(r => r.ok
-                    ? console.log('[Airtable] PDF 첨부 업로드 성공')
-                    : r.json().then(e => console.error('[Airtable] PDF 첨부 실패:', e.error))
-                )
-                .catch(e => console.error('[Airtable] PDF 첨부 네트워크 오류:', e.message));
-            }
-            
+            // PDF 첨부는 /generate-pdf 서버에서 airtableInfo를 받아 처리
+            // (LibreOffice 이중 실행 방지)
             return { success: true, customerId, quotationId };
         } catch (error) {
             console.error('[Airtable] Overall process error:', error);

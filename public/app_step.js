@@ -1038,7 +1038,7 @@ function setPdfBtnEnabled(enabled) {
     pdfBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
 }
 
-// PDF 저장 버튼 - PDF 생성과 에어테이블 저장을 독립적으로 실행
+// PDF 저장 버튼 - 에어테이블 저장 먼저 → quotationId → PDF 생성(서버에서 Airtable 업로드 포함)
 document.getElementById('btn-save-pdf').addEventListener('click', async () => {
     const mapping = generateMapping();
     const btn = document.getElementById('btn-save-pdf');
@@ -1051,25 +1051,62 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
-    showStatusBar('<i class="fas fa-spinner fa-spin"></i> PDF 생성 및 에어테이블 저장 중...', 'info');
+    showStatusBar('<i class="fas fa-spinner fa-spin"></i> 에어테이블 저장 중...', 'info');
 
-    // ── PDF 생성 & 다운로드 함수 (독립 실행) ──────────────────────────────
-    async function generateAndDownloadPdf() {
+    // ── Step 1: 에어테이블 저장 먼저 (quotationId 확보) ──────────────────────
+    let airOk = false;
+    let quotationId = null;
+    let airErrMsg = '';
+
+    try {
+        const airResult = await window.airtableService.saveQuotation(state);
+        airOk = true;
+        quotationId = airResult.quotationId;
+
+        // 관리자 도구 최근 기록 링크 업데이트
+        if (quotationId) {
+            const recordUrl = `https://airtable.com/appFEZaTg3yZU1QwW/tbloif1mheDqaRRuR/${quotationId}`;
+            const recentEl = document.getElementById('status-recent-record');
+            if (recentEl) {
+                recentEl.innerHTML = `<a href="${recordUrl}" target="_blank" style="color:var(--toss-blue); font-weight:600; text-decoration:none;">보기 <i class="fas fa-external-link-alt" style="font-size:0.75rem;"></i></a>`;
+            }
+        }
+    } catch (err) {
+        airErrMsg = err.message || '알 수 없는 오류';
+        console.error('[Airtable]', err);
+    }
+
+    // ── Step 2: PDF 생성 & 다운로드 (airtableInfo 포함 → 서버에서 Airtable 업로드까지) ──
+    showStatusBar('<i class="fas fa-spinner fa-spin"></i> PDF 생성 중... (약 10초)', 'info');
+
+    let pdfOk = false;
+    let fileName = `${state.customerName || '견적서'}_견적서.pdf`;
+
+    try {
+        // airtableInfo가 있으면 서버에서 PDF 생성 후 Airtable에 자동 업로드
+        const pdfBody = { ...mapping };
+        if (quotationId) {
+            pdfBody.airtableInfo = {
+                baseId: 'appFEZaTg3yZU1QwW',
+                recordId: quotationId
+            };
+        }
+
         const pdfRes = await fetch(PDF_SERVER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(mapping)
+            body: JSON.stringify(pdfBody)
         });
+
         if (!pdfRes.ok) {
             const errData = await pdfRes.json().catch(() => ({ error: pdfRes.statusText }));
             throw new Error(errData.error || `PDF 서버 오류 (${pdfRes.status})`);
         }
+
         const blob = await pdfRes.blob();
         const disposition = pdfRes.headers.get('Content-Disposition') || '';
         const nameMatch = disposition.match(/filename\*=UTF-8''([^;]+)/);
-        const fileName = nameMatch
-            ? decodeURIComponent(nameMatch[1])
-            : `${state.customerName || '견적서'}_견적서.pdf`;
+        fileName = nameMatch ? decodeURIComponent(nameMatch[1]) : fileName;
 
         // 다운로드 트리거 (모바일에서 실패해도 throw 하지 않음)
         try {
@@ -1082,45 +1119,22 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (downloadErr) {
-            console.warn('[PDF Download] 자동 다운로드 실패 (모바일 환경):', downloadErr.message);
+            console.warn('[PDF Download] 자동 다운로드 실패 (모바일):', downloadErr.message);
         }
-        return fileName;
+        pdfOk = true;
+    } catch (pdfErr) {
+        console.error('[PDF]', pdfErr);
     }
 
-    // ── 두 작업 병렬 실행 (어느 한쪽 실패가 다른 쪽에 영향 없음) ──────────
-    const [pdfResult, airResult] = await Promise.allSettled([
-        generateAndDownloadPdf(),
-        window.airtableService.saveQuotation(state)
-    ]);
-
-    // ── 결과 처리 ──────────────────────────────────────────────────────────
-    const pdfOk  = pdfResult.status  === 'fulfilled';
-    const airOk  = airResult.status  === 'fulfilled';
-    const fileName = pdfOk ? pdfResult.value : `${state.customerName || '견적서'}_견적서.pdf`;
-
+    // ── 최종 상태 메시지 ──────────────────────────────────────────────────────
     if (pdfOk && airOk) {
         showStatusBar(`✅ <b>${fileName}</b> 다운로드 및 에어테이블 저장 성공!`, 'success');
     } else if (pdfOk && !airOk) {
-        const airErrMsg = airResult.reason?.message || '알 수 없는 오류 (콘솔 확인)';
-        console.error('[Airtable]', airResult.reason);
         showStatusBar(`✅ PDF 다운로드 완료 — 에어테이블 저장 실패: ${airErrMsg}`, 'warning');
     } else if (!pdfOk && airOk) {
-        console.error('[PDF]', pdfResult.reason);
-        showStatusBar(`⚠️ 에어테이블 저장 성공 — PDF 생성 실패: ${pdfResult.reason?.message || ''}`, 'warning');
+        showStatusBar(`⚠️ 에어테이블 저장 성공 — PDF 생성 실패 (서버 확인 필요)`, 'warning');
     } else {
-        const airErrMsg = airResult.reason?.message || '알 수 없는 오류';
-        console.error('[PDF]', pdfResult.reason);
-        console.error('[Airtable]', airResult.reason);
         showStatusBar(`❌ 에어테이블 저장 실패: ${airErrMsg}`, 'error');
-    }
-
-    // 에어테이블 저장 성공 시 관리자 최근 기록 링크 업데이트
-    if (airOk && airResult.value?.quotationId) {
-        const recordUrl = `https://airtable.com/appFEZaTg3yZU1QwW/tbloif1mheDqaRRuR/${airResult.value.quotationId}`;
-        const recentEl = document.getElementById('status-recent-record');
-        if (recentEl) {
-            recentEl.innerHTML = `<a href="${recordUrl}" target="_blank" style="color:var(--toss-blue); font-weight:600; text-decoration:none;">보기 <i class="fas fa-external-link-alt" style="font-size:0.75rem;"></i></a>`;
-        }
     }
 
     btn.innerHTML = '<i class="fas fa-check-circle"></i> 견적서 발행 완료';
