@@ -32,12 +32,11 @@ window.airtableService = {
             const quotationResult = await window.airtableService.createQuotation(customerId, state);
             const quotationId = quotationResult.id;
 
-            // 3) PDF 생성 및 업로드 (서버에 위임)
-            console.log(`[Airtable] Requesting PDF upload for Record: ${quotationId}`);
+            // 3) PDF 첨부 업로드 - fire-and-forget (고객/견적 저장과 무관하게 백그라운드 실행)
+            // await 하지 않으므로 네트워크 지연/타임아웃이 saveQuotation 전체에 영향 없음
             const mapping = window.generateMapping ? window.generateMapping() : null;
-            
             if (mapping) {
-                const uploadRes = await fetch(`${BACKEND_URL}/upload-pdf-to-airtable`, {
+                fetch(`${BACKEND_URL}/upload-pdf-to-airtable`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -47,14 +46,12 @@ window.airtableService = {
                             recordId: quotationId
                         }
                     })
-                });
-
-                if (!uploadRes.ok) {
-                    const errData = await uploadRes.json();
-                    console.error('[Airtable] PDF upload failed:', errData.error);
-                } else {
-                    console.log('[Airtable] PDF upload requested and successful');
-                }
+                })
+                .then(r => r.ok
+                    ? console.log('[Airtable] PDF 첨부 업로드 성공')
+                    : r.json().then(e => console.error('[Airtable] PDF 첨부 실패:', e.error))
+                )
+                .catch(e => console.error('[Airtable] PDF 첨부 네트워크 오류:', e.message));
             }
             
             return { success: true, customerId, quotationId };
@@ -141,11 +138,15 @@ window.airtableService = {
 
         if (data.records && data.records.length > 0) {
             const recordId = data.records[0].id;
-            await fetch(`${PROXY_URL}/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_CUSTOMER}/${recordId}`, {
+            const patchRes = await fetch(`${PROXY_URL}/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_CUSTOMER}/${recordId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fields, typecast: true })
             });
+            if (!patchRes.ok) {
+                const patchErr = await patchRes.json().catch(() => ({}));
+                throw new Error(`고객 정보 업데이트 실패 (${patchRes.status}): ${patchErr.error?.message || ''}`);
+            }
             return recordId;
         } else {
             const createRes = await fetch(`${PROXY_URL}/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_CUSTOMER}`, {

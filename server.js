@@ -171,7 +171,7 @@ app.use('/airtable-proxy', async (req, res) => {
     // 예: /airtable-proxy/appID/tableID?filter=... -> req.url은 /appID/tableID?filter=...
     const subPath = req.url.startsWith('/') ? req.url.slice(1) : req.url;
     const targetUrl = `https://api.airtable.com/v0/${subPath}`;
-    const token = process.env['airtable API key'] || process.env.AIRTABLE_API_KEY;
+    const token = process.env.AIRTABLE_API_KEY;
 
     if (!token) return res.status(500).json({ error: '서버에 에어테이블 API 키가 설정되지 않았습니다.' });
 
