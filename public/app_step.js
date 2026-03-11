@@ -1101,15 +1101,17 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
     if (pdfOk && airOk) {
         showStatusBar(`✅ <b>${fileName}</b> 다운로드 및 에어테이블 저장 성공!`, 'success');
     } else if (pdfOk && !airOk) {
+        const airErrMsg = airResult.reason?.message || '알 수 없는 오류 (콘솔 확인)';
         console.error('[Airtable]', airResult.reason);
-        showStatusBar(`✅ PDF 다운로드 완료 — 에어테이블 저장 실패: ${airResult.reason?.message || ''}`, 'warning');
+        showStatusBar(`✅ PDF 다운로드 완료 — 에어테이블 저장 실패: ${airErrMsg}`, 'warning');
     } else if (!pdfOk && airOk) {
         console.error('[PDF]', pdfResult.reason);
         showStatusBar(`⚠️ 에어테이블 저장 성공 — PDF 생성 실패: ${pdfResult.reason?.message || ''}`, 'warning');
     } else {
+        const airErrMsg = airResult.reason?.message || '알 수 없는 오류';
         console.error('[PDF]', pdfResult.reason);
         console.error('[Airtable]', airResult.reason);
-        showStatusBar(`❌ PDF 생성 및 에어테이블 저장 모두 실패했습니다.`, 'error');
+        showStatusBar(`❌ 에어테이블 저장 실패: ${airErrMsg}`, 'error');
     }
 
     // 에어테이블 저장 성공 시 관리자 최근 기록 링크 업데이트

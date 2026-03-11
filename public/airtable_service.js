@@ -27,7 +27,10 @@ window.airtableService = {
             
             // 1) 고객 Upsert
             const customerId = await window.airtableService.upsertCustomer(state);
-            
+
+            // 레이트 리밋 방지: upsertCustomer (2req) 후 createQuotation (1req) 사이 딜레이
+            await new Promise(resolve => setTimeout(resolve, 350));
+
             // 2) 견적 기록 생성
             const quotationResult = await window.airtableService.createQuotation(customerId, state);
             const quotationId = quotationResult.id;
@@ -167,36 +170,36 @@ window.airtableService = {
         const { results, salesManager, itemToggles, maintenanceFrequency, appointmentFrequency } = state;
         
         const serviceTypes = [];
-        if (itemToggles.inspection) serviceTypes.push("성능");
-        if (itemToggles.maintenance) serviceTypes.push("유지");
-        if (itemToggles.appointment) serviceTypes.push("위탁선임");
+        if (itemToggles.inspection)  serviceTypes.push('성능');
+        if (itemToggles.maintenance) serviceTypes.push('유지');
+        if (itemToggles.appointment) serviceTypes.push('위탁선임');
 
         const today = new Date().toISOString().split('T')[0];
 
+        // null/undefined 필드는 제외 (Airtable 링크드 필드에 null 전송 시 422 에러)
         const fields = {
-            "고객 고유 ID": [customerId],
-            "견적 금액": results.costs.yearly,
-            "서비스 유형": serviceTypes,
-            "영업 담당자": salesManager || null,
-            "견적서 발송일": today
+            '고객 고유 ID': [customerId],
+            '견적 금액': results?.costs?.yearly ?? 0,
+            '견적서 발송일': today
         };
-
-        if (itemToggles.maintenance) {
-            fields["유지 점검 횟수"] = maintenanceFrequency || "2회";
-        }
-        if (itemToggles.appointment) {
-            fields["위탁 선임 횟수"] = appointmentFrequency || "12개월";
-        }
+        // 서비스 유형: 빈 배열도 오류 날 수 있으므로 값 있을 때만 추가
+        if (serviceTypes.length > 0) fields['서비스 유형'] = serviceTypes;
+        // 영업 담당자: null 전송 금지 (링크드 필드 422 원인)
+        if (salesManager) fields['영업 담당자'] = salesManager;
+        // 점검/선임 횟수: 해당 서비스 활성 시만 추가
+        if (itemToggles.maintenance) fields['유지 점검 횟수'] = maintenanceFrequency || '2회';
+        if (itemToggles.appointment) fields['위탁 선임 횟수'] = appointmentFrequency || '12개월';
 
         const response = await fetch(`${PROXY_URL}/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_QUOTATION}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fields, typecast: true })
         });
-        
+
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error?.message || 'Failed to create quotation record');
+            const err = await response.json().catch(() => ({}));
+            const msg = err.error?.message || err.error || JSON.stringify(err);
+            throw new Error(`견적 저장 실패 (HTTP ${response.status}): ${msg}`);
         }
 
         return await response.json();
