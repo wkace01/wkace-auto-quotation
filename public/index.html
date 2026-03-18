@@ -226,7 +226,13 @@
                         </div>
                     </div>
 
-                    <div class="cond-group-title">위탁선임 비용</div>
+                    <div class="cond-row" data-row-item="appointment">
+                        <span class="cond-label">
+                            <button class="btn-toggle-item" data-item="appointment" title="항목 제외/포함"><i
+                                    class="fas fa-minus-circle"></i></button>
+                            위탁선임 비용
+                        </span>
+                    </div>
                     <div class="cond-row" data-row-item="appointment">
                         <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">위탁 선임 횟수</span>
                         <div class="cond-controls">
@@ -234,11 +240,7 @@
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="appointment">
-                        <span class="cond-label">
-                            <button class="btn-toggle-item" data-item="appointment" title="항목 제외/포함"><i
-                                    class="fas fa-minus-circle"></i></button>
-                            월 단가
-                        </span>
+                        <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">월 단가</span>
                         <div class="cond-controls">
                             <button class="btn-adj" data-adj="-10000" data-target="cond-monthly-appointment">-</button>
                             <input type="text" id="cond-monthly-appointment" class="cond-input cond-field">
@@ -246,7 +248,7 @@
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="appointment">
-                        <span class="cond-label">연간 합계</span>
+                        <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">연간 합계</span>
                         <div class="cond-controls">
                             <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-appointment">-</button>
                             <input type="text" id="cond-yearly-appointment" class="cond-input cond-field">
