@@ -40,12 +40,13 @@ const state = {
         inspection: true
     },
     discount: 0, // 할인율 (%)
+    includeVAT: false, // 부가세 포함 여부
     results: {
         grade: "",
         coef: 1,
         inspectionWorkers: 0,
         maintenanceWorkers: 0,
-        costs: { inspection: 0, maintenance: 0, appointment: 0, yearly: 0, monthly: 0 }
+        costs: { inspection: 0, maintenance: 0, appointment: 0, yearly: 0, monthly: 0, vat: 0 }
     }
 };
 
@@ -149,7 +150,11 @@ function calculate() {
     const subtotal = eff.yearlyInspection + eff.yearlyMaintenance + eff.yearlyAppointment;
     // Apply discount
     const discountAmount = Math.round(subtotal * (state.discount / 100));
-    state.results.costs.yearly = subtotal - discountAmount;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    // Apply VAT
+    const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
+    state.results.costs.vat = vatAmount;
+    state.results.costs.yearly = subtotalAfterDiscount + vatAmount;
     state.results.costs.monthly = Math.floor(state.results.costs.yearly / 12);
 
     // \uc870\uac74\ud45c \ud328\ub110 \uc5c5\ub370\uc774\ud2b8
@@ -307,7 +312,8 @@ function renderTabs() {
         <tr><td>유지점검</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td><td>${state.maintenanceFrequency}</td></tr>
         <tr><td>위탁선임</td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td><td>${state.appointmentFrequency}</td></tr>
         ${discountRow}
-        <tr style="font-weight:700; color:var(--toss-blue)"><td>최종 합계 (연간)</td><td>₩ ${state.results.costs.yearly.toLocaleString()}</td><td>부가세 별도</td></tr>
+        ${state.results.costs.vat > 0 ? `<tr style="color:#059669"><td>부가세 (10%)</td><td>+ ₩ ${state.results.costs.vat.toLocaleString()}</td><td>합계의 10%</td></tr>` : ''}
+        <tr style="font-weight:700; color:var(--toss-blue)"><td>최종 합계 (연간)</td><td>₩ ${state.results.costs.yearly.toLocaleString()}</td><td>${state.includeVAT ? '부가세 포함' : '부가세 별도'}</td></tr>
         <tr style="font-weight:600"><td>월 납부액</td><td>₩ ${state.results.costs.monthly.toLocaleString()}</td><td>÷12</td></tr>
     `;
 
@@ -809,6 +815,16 @@ document.getElementById('quotation-date').addEventListener('input', (e) => {
     state.quotationDate = e.target.value;
 });
 
+// 부가세 토글 버튼
+document.querySelectorAll('.btn-vat').forEach(btn => {
+    btn.addEventListener('click', () => {
+        state.includeVAT = btn.dataset.vat === 'true';
+        document.querySelectorAll('.btn-vat').forEach(b => b.classList.remove('active-vat'));
+        btn.classList.add('active-vat');
+        calculate();
+    });
+});
+
 // ---- Condition Table Inputs ----
 const COND_INPUT_MAP = {
     'cond-monthly-appointment': 'monthlyAppointment',
@@ -892,6 +908,10 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     state.appointmentFrequency = "12개월";
     state.condOverride = {};
     state.itemToggles = { appointment: true, maintenance: true, inspection: true };
+    state.includeVAT = false;
+    document.querySelectorAll('.btn-vat').forEach(b => b.classList.remove('active-vat'));
+    const vatBtnDefault = document.querySelector('.btn-vat[data-vat="false"]');
+    if (vatBtnDefault) vatBtnDefault.classList.add('active-vat');
     state._lastConditionArea = -1;
     _lastBuildingResult = null;
 
@@ -978,6 +998,8 @@ function generateMapping() {
             { name: "합계(할인전)", cell: "T26", value: subtotal },
             { name: "최종 연간 금액", cell: "T27", value: costs.yearly },
             { name: "월 납부액", cell: "T28", value: costs.monthly },
+            { name: "부가세 여부", cell: "T29", value: state.includeVAT ? '포함' : '별도' },
+            { name: "부가세 금액", cell: "T30", value: costs.vat || 0 },
             { name: "건물등급", cell: "Y25", value: state.results.grade }
         ],
         "2.1 성능점검 산출내역": [
