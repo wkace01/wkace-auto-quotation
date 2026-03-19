@@ -43,7 +43,7 @@ app.post('/generate-pdf', async (req, res) => {
     const expectedPdf = tempXlsx.replace('.xlsx', '.pdf');
 
     try {
-        const { templateName, outputSheets, data, airtableInfo } = req.body;
+        const { templateName, outputSheets, data, airtableInfo, fileNameMeta } = req.body;
         const actualData = data || req.body;
         const actualTemplate = templateName || '정보통신사업부 견적서 양식_ver1.xlsx';
         const actualSheets = outputSheets || Object.keys(actualData);
@@ -70,56 +70,53 @@ app.post('/generate-pdf', async (req, res) => {
 
         if (!fs.existsSync(expectedPdf)) throw new Error('PDF 변환 실패');
 
-        const customerName = (() => {
+        const safeStr = (s) => String(s || '').replace(/[/\\?%*:|"<>]/g, '_').trim();
+        const meta = fileNameMeta || {};
+        const uniqueId = safeStr(meta.quotationUniqueId) || 'NO_ID';
+        const customerName = safeStr(meta.customerName) || (() => {
             try {
                 for (const cells of Object.values(actualData)) {
                     if (Array.isArray(cells)) {
                         const found = cells.find(c => c.name === '고객명');
-                        if (found && found.value) return String(found.value).replace(/[/\\?%*:|"<>]/g, '_');
+                        if (found && found.value) return safeStr(found.value);
                     }
                 }
                 return '견적서';
             } catch { return '견적서'; }
         })();
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const fileName = `${customerName}_견적서_${today}.pdf`;
+        const salesManager = safeStr(meta.salesManager);
+        const fileName = salesManager
+            ? `${uniqueId}_견적서_${customerName}_${salesManager}.pdf`
+            : `${uniqueId}_견적서_${customerName}.pdf`;
+
+        // 버퍼로 읽어서 전송 (res.sendFile은 Windows 한글 경로에서 불안정)
+        const pdfBuffer = fs.readFileSync(expectedPdf);
+        cleanup(tempXlsx, expectedPdf); // 버퍼에 담았으므로 파일 즉시 정리
 
         res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
         res.setHeader('Content-Type', 'application/pdf');
+        res.send(pdfBuffer);
 
-        // PDF를 클라이언트에 전송
-        res.sendFile(expectedPdf, {}, (sendErr) => {
-            if (sendErr && !sendErr.message.includes('ECONNRESET')) {
-                console.error('❌ PDF 전송 오류:', sendErr.message);
+        // Airtable 업로드 (fire-and-forget, 클라이언트 응답과 무관)
+        if (airtableInfo && airtableInfo.recordId) {
+            const token = process.env.AIRTABLE_API_KEY;
+            if (token) {
+                const base64Pdf = pdfBuffer.toString('base64');
+                const fieldId = 'fld4Zc6J2Etls5F48';
+                const uploadUrl = `https://content.airtable.com/v0/${airtableInfo.baseId}/${airtableInfo.recordId}/${fieldId}/uploadAttachment`;
+
+                fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contentType: 'application/pdf', file: base64Pdf, filename: fileName })
+                })
+                .then(r => r.ok
+                    ? console.log(`✅ Airtable PDF 업로드 성공: ${fileName}`)
+                    : r.json().then(e => console.error('❌ Airtable PDF 업로드 실패:', e?.error?.message || e))
+                )
+                .catch(e => console.error('❌ Airtable PDF 업로드 네트워크 오류:', e.message));
             }
-
-            // Airtable 업로드 (서버 내부 fire-and-forget, 클라이언트 응답과 무관)
-            if (airtableInfo && airtableInfo.recordId) {
-                const token = process.env.AIRTABLE_API_KEY;
-                if (token && fs.existsSync(expectedPdf)) {
-                    const pdfBuffer = fs.readFileSync(expectedPdf);
-                    const base64Pdf = pdfBuffer.toString('base64');
-                    const fieldId = 'fld4Zc6J2Etls5F48';
-                    const uploadUrl = `https://content.airtable.com/v0/${airtableInfo.baseId}/${airtableInfo.recordId}/${fieldId}/uploadAttachment`;
-
-                    fetch(uploadUrl, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contentType: 'application/pdf', file: base64Pdf, filename: fileName })
-                    })
-                    .then(r => r.ok
-                        ? console.log(`✅ Airtable PDF 업로드 성공: ${fileName}`)
-                        : r.json().then(e => console.error('❌ Airtable PDF 업로드 실패:', e?.error?.message || e))
-                    )
-                    .catch(e => console.error('❌ Airtable PDF 업로드 네트워크 오류:', e.message))
-                    .finally(() => cleanup(tempXlsx, expectedPdf));
-                } else {
-                    cleanup(tempXlsx, expectedPdf);
-                }
-            } else {
-                cleanup(tempXlsx, expectedPdf);
-            }
-        });
+        }
 
     } catch (err) {
         console.error('❌ PDF 생성 오류:', err.message);

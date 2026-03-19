@@ -620,8 +620,8 @@ function initKakaoSearch() {
         if (buildingName) document.getElementById('customer-name').value = buildingName;
 
         state.address = roadAddr;
-        state.buildingName = buildingName || '';
-        state.customerName = buildingName || '';
+        state.buildingName = buildingName || state.customerName || '';
+        state.customerName = buildingName || state.customerName || '';
         if (data) {
             state.roadAddress = data.roadAddress || roadAddr; // 표준 도로명 우선 저장
             state.jibunAddress = data.jibunAddress || data.autoJibunAddress || '';
@@ -641,6 +641,8 @@ function initKakaoSearch() {
 
 document.getElementById('customer-name').addEventListener('input', (e) => {
     state.customerName = e.target.value;
+    // buildingName이 비어있으면 customerName과 동기화
+    if (!state.buildingName) state.buildingName = e.target.value;
     calculate();
 });
 
@@ -821,7 +823,15 @@ document.getElementById('sales-manager-custom').addEventListener('input', (e) =>
 
 document.getElementById('sales-manager-phone').addEventListener('input', (e) => {
     if (!e.target.hasAttribute('readonly')) {
-        state.salesManagerPhone = e.target.value;
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+        let formatted = digits;
+        if (digits.length > 7) {
+            formatted = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+        } else if (digits.length > 3) {
+            formatted = digits.slice(0, 3) + '-' + digits.slice(3);
+        }
+        e.target.value = formatted;
+        state.salesManagerPhone = formatted;
     }
 });
 
@@ -983,6 +993,11 @@ const PDF_SERVER_URL = (window.location.port === '3000' || window.location.hostn
     : '/generate-pdf';
 
 // ---- Mapping Logic for Export ----
+function formatKoreanDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return `${y}년 ${m}월 ${d}일`;
+}
+
 function generateMapping() {
     const today = state.quotationDate || new Date().toISOString().slice(0, 10);
     const costs = state.results.costs;
@@ -1000,7 +1015,8 @@ function generateMapping() {
 
     return {
         "표지": [
-            { name: "고객명", cell: "F10", value: state.customerName }
+            { name: "고객명", cell: "F10", value: state.customerName },
+            { name: "견적일", cell: "A18", value: formatKoreanDate(today) }
         ],
         "1. 견적서": [
             { name: "견적일", cell: "E8", value: today },
@@ -1127,12 +1143,14 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
     // ── Step 1: 에어테이블 저장 먼저 (quotationId 확보) ──────────────────────
     let airOk = false;
     let quotationId = null;
+    let quotationUniqueId = '';
     let airErrMsg = '';
 
     try {
         const airResult = await window.airtableService.saveQuotation(state);
         airOk = true;
         quotationId = airResult.quotationId;
+        quotationUniqueId = airResult.quotationUniqueId || '';
 
         // 관리자 도구 최근 기록 링크 업데이트
         if (quotationId) {
@@ -1162,6 +1180,11 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
                 recordId: quotationId
             };
         }
+        pdfBody.fileNameMeta = {
+            quotationUniqueId: quotationUniqueId || '',
+            customerName: state.customerName || '',
+            salesManager: state.salesManager || ''
+        };
 
         const pdfRes = await fetch(PDF_SERVER_URL, {
             method: 'POST',
@@ -1402,6 +1425,11 @@ window.goToStep = function(step) {
     if (step === 3 && currentStep === 2) {
         if (!state.floorArea || state.floorArea < 5000) {
             alert("연면적이 부족하거나 입력되지 않았습니다. (최소 5,000㎡)");
+            return;
+        }
+        if (!state.customerName || !state.customerName.trim()) {
+            alert("대상처명(고객명)을 입력해주세요.");
+            document.getElementById('customer-name').focus();
             return;
         }
     }

@@ -34,10 +34,11 @@ window.airtableService = {
             // 2) 견적 기록 생성
             const quotationResult = await window.airtableService.createQuotation(customerId, state);
             const quotationId = quotationResult.id;
+            const quotationUniqueId = quotationResult.fields?.['견적 고유 ID'] ?? '';
 
             // PDF 첨부는 /generate-pdf 서버에서 airtableInfo를 받아 처리
             // (LibreOffice 이중 실행 방지)
-            return { success: true, customerId, quotationId };
+            return { success: true, customerId, quotationId, quotationUniqueId };
         } catch (error) {
             console.error('[Airtable] Overall process error:', error);
             throw error;
@@ -80,7 +81,10 @@ window.airtableService = {
         const { address, roadAddress, buildingName, floorArea, useAprDay, purpose, manager, managerPhone, managerPosition, managerMobile, managerEmail, jibunAddress, zonecode } = state;
         
         const targetAddress = roadAddress || address;
-        const formula = `AND({건물명}='${buildingName.replace(/'/g, "\\'")}', {도로명 주소}='${targetAddress.replace(/'/g, "\\'")}')`;
+        const effectiveBuildingName = buildingName || state.customerName || '';
+        const formula = effectiveBuildingName
+            ? `AND({건물명}='${effectiveBuildingName.replace(/'/g, "\\'")}', {도로명 주소}='${targetAddress.replace(/'/g, "\\'")}')`
+            : `{도로명 주소}='${targetAddress.replace(/'/g, "\\'")}'`;
         const searchUrl = `${PROXY_URL}/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_CUSTOMER}?filterByFormula=${encodeURIComponent(formula)}`;
 
         const response = await fetch(searchUrl);
@@ -104,7 +108,7 @@ window.airtableService = {
         }
 
         const fields = {
-            "건물명": buildingName,
+            "건물명": effectiveBuildingName,
             "도로명 주소": targetAddress,
             "지번 주소": jibunAddress || '',
             "우편번호": zonecode || '',
@@ -147,20 +151,21 @@ window.airtableService = {
      * 4. 견적 기록 생성 (Proxy 사용)
      */
     createQuotation: async (customerId, state) => {
-        const { results, salesManager, itemToggles, maintenanceFrequency, appointmentFrequency } = state;
-        
+        const { results, salesManager, itemToggles, maintenanceFrequency, appointmentFrequency, quotationDate } = state;
+
         const serviceTypes = [];
         if (itemToggles.inspection)  serviceTypes.push('성능');
         if (itemToggles.maintenance) serviceTypes.push('유지');
         if (itemToggles.appointment) serviceTypes.push('위탁선임');
 
         const today = new Date().toISOString().split('T')[0];
+        const quoteDate = quotationDate || today;
 
         // null/undefined 필드는 제외 (Airtable 링크드 필드에 null 전송 시 422 에러)
         const fields = {
             '고객 고유 ID': [customerId],
             '견적 금액': results?.costs?.yearly ?? 0,
-            '견적서 발송일': today
+            '견적서 발송일': quoteDate
         };
         // 서비스 유형: 빈 배열도 오류 날 수 있으므로 값 있을 때만 추가
         if (serviceTypes.length > 0) fields['서비스 유형'] = serviceTypes;
