@@ -272,6 +272,21 @@
                         </div>
                     </div>
                     <div class="cond-row">
+                        <span class="cond-label">
+                            견적 조정 배수
+                            <span id="multiplier-hint" style="display:none; font-size:0.75rem; color:#f59e0b; margin-left:0.3rem;">10% 인상 권장</span>
+                        </span>
+                        <div class="cond-controls" style="background:transparent; padding:0; gap:0.5rem; display:flex; align-items:center; flex-wrap:wrap;">
+                            <button class="btn-vat active-vat" data-multiplier="false">미적용</button>
+                            <button class="btn-vat" data-multiplier="true">적용</button>
+                            <div id="multiplier-controls" style="display:none; gap:0.4rem; align-items:center; display:flex;">
+                                <button class="btn-adj" id="btn-multiplier-minus">−</button>
+                                <span id="multiplier-value" style="min-width:2.5rem; text-align:center; font-weight:600;">1.5배</span>
+                                <button class="btn-adj" id="btn-multiplier-plus">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cond-row">
                         <span class="cond-label">부가세 (10%)</span>
                         <div class="cond-controls" style="background:transparent; padding:0; gap:0.5rem; display:flex;">
                             <button class="btn-vat active-vat" data-vat="false">별도</button>
