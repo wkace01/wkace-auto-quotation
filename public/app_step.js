@@ -620,8 +620,8 @@ function initKakaoSearch() {
         if (buildingName) document.getElementById('customer-name').value = buildingName;
 
         state.address = roadAddr;
-        state.buildingName = buildingName || '';
-        state.customerName = buildingName || '';
+        state.buildingName = buildingName || state.customerName || '';
+        state.customerName = buildingName || state.customerName || '';
         if (data) {
             state.roadAddress = data.roadAddress || roadAddr; // 표준 도로명 우선 저장
             state.jibunAddress = data.jibunAddress || data.autoJibunAddress || '';
@@ -641,6 +641,8 @@ function initKakaoSearch() {
 
 document.getElementById('customer-name').addEventListener('input', (e) => {
     state.customerName = e.target.value;
+    // buildingName이 비어있으면 customerName과 동기화
+    if (!state.buildingName) state.buildingName = e.target.value;
     calculate();
 });
 
@@ -1127,12 +1129,14 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
     // ── Step 1: 에어테이블 저장 먼저 (quotationId 확보) ──────────────────────
     let airOk = false;
     let quotationId = null;
+    let quotationUniqueId = '';
     let airErrMsg = '';
 
     try {
         const airResult = await window.airtableService.saveQuotation(state);
         airOk = true;
         quotationId = airResult.quotationId;
+        quotationUniqueId = airResult.quotationUniqueId || '';
 
         // 관리자 도구 최근 기록 링크 업데이트
         if (quotationId) {
@@ -1162,6 +1166,11 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
                 recordId: quotationId
             };
         }
+        pdfBody.fileNameMeta = {
+            quotationUniqueId: quotationUniqueId || '',
+            customerName: state.customerName || '',
+            salesManager: state.salesManager || ''
+        };
 
         const pdfRes = await fetch(PDF_SERVER_URL, {
             method: 'POST',
@@ -1402,6 +1411,11 @@ window.goToStep = function(step) {
     if (step === 3 && currentStep === 2) {
         if (!state.floorArea || state.floorArea < 5000) {
             alert("연면적이 부족하거나 입력되지 않았습니다. (최소 5,000㎡)");
+            return;
+        }
+        if (!state.customerName || !state.customerName.trim()) {
+            alert("대상처명(고객명)을 입력해주세요.");
+            document.getElementById('customer-name').focus();
             return;
         }
     }

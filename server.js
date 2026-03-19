@@ -43,7 +43,7 @@ app.post('/generate-pdf', async (req, res) => {
     const expectedPdf = tempXlsx.replace('.xlsx', '.pdf');
 
     try {
-        const { templateName, outputSheets, data, airtableInfo } = req.body;
+        const { templateName, outputSheets, data, airtableInfo, fileNameMeta } = req.body;
         const actualData = data || req.body;
         const actualTemplate = templateName || '정보통신사업부 견적서 양식_ver1.xlsx';
         const actualSheets = outputSheets || Object.keys(actualData);
@@ -70,19 +70,24 @@ app.post('/generate-pdf', async (req, res) => {
 
         if (!fs.existsSync(expectedPdf)) throw new Error('PDF 변환 실패');
 
-        const customerName = (() => {
+        const safeStr = (s) => String(s || '').replace(/[/\\?%*:|"<>]/g, '_').trim();
+        const meta = fileNameMeta || {};
+        const uniqueId = safeStr(meta.quotationUniqueId) || 'NO_ID';
+        const customerName = safeStr(meta.customerName) || (() => {
             try {
                 for (const cells of Object.values(actualData)) {
                     if (Array.isArray(cells)) {
                         const found = cells.find(c => c.name === '고객명');
-                        if (found && found.value) return String(found.value).replace(/[/\\?%*:|"<>]/g, '_');
+                        if (found && found.value) return safeStr(found.value);
                     }
                 }
                 return '견적서';
             } catch { return '견적서'; }
         })();
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const fileName = `${customerName}_견적서_${today}.pdf`;
+        const salesManager = safeStr(meta.salesManager);
+        const fileName = salesManager
+            ? `${uniqueId}_견적서_${customerName}_${salesManager}.pdf`
+            : `${uniqueId}_견적서_${customerName}.pdf`;
 
         res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
         res.setHeader('Content-Type', 'application/pdf');

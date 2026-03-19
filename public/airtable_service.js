@@ -34,10 +34,11 @@ window.airtableService = {
             // 2) 견적 기록 생성
             const quotationResult = await window.airtableService.createQuotation(customerId, state);
             const quotationId = quotationResult.id;
+            const quotationUniqueId = quotationResult.fields?.['견적 고유 ID'] ?? '';
 
             // PDF 첨부는 /generate-pdf 서버에서 airtableInfo를 받아 처리
             // (LibreOffice 이중 실행 방지)
-            return { success: true, customerId, quotationId };
+            return { success: true, customerId, quotationId, quotationUniqueId };
         } catch (error) {
             console.error('[Airtable] Overall process error:', error);
             throw error;
@@ -80,7 +81,10 @@ window.airtableService = {
         const { address, roadAddress, buildingName, floorArea, useAprDay, purpose, manager, managerPhone, managerPosition, managerMobile, managerEmail, jibunAddress, zonecode } = state;
         
         const targetAddress = roadAddress || address;
-        const formula = `AND({건물명}='${buildingName.replace(/'/g, "\\'")}', {도로명 주소}='${targetAddress.replace(/'/g, "\\'")}')`;
+        const effectiveBuildingName = buildingName || state.customerName || '';
+        const formula = effectiveBuildingName
+            ? `AND({건물명}='${effectiveBuildingName.replace(/'/g, "\\'")}', {도로명 주소}='${targetAddress.replace(/'/g, "\\'")}')`
+            : `{도로명 주소}='${targetAddress.replace(/'/g, "\\'")}'`;
         const searchUrl = `${PROXY_URL}/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLE_CUSTOMER}?filterByFormula=${encodeURIComponent(formula)}`;
 
         const response = await fetch(searchUrl);
@@ -104,7 +108,7 @@ window.airtableService = {
         }
 
         const fields = {
-            "건물명": buildingName,
+            "건물명": effectiveBuildingName,
             "도로명 주소": targetAddress,
             "지번 주소": jibunAddress || '',
             "우편번호": zonecode || '',
