@@ -30,6 +30,7 @@ const state = {
     managerEmail: "",
     salesManager: "",
     salesManagerPhone: "",
+    quotationDate: "",
     selectedEquipments: new Set(),
     condOverride: {},         // 사용자가 수정한 조건표 값 { key: value }
     _lastConditionArea: -1,  // 이전 구간 추적 (구간 변경 시 override 초기화용)
@@ -781,17 +782,31 @@ document.getElementById('manager-email').addEventListener('input', (e) => {
 
 // 영업 담당자 변경 시 연락처 자동 입력
 document.getElementById('sales-manager').addEventListener('change', (e) => {
-    const selectedName = e.target.value;
-    const manager = SALES_MANAGERS.find(m => m.name === selectedName);
-
-    state.salesManager = selectedName;
-    state.salesManagerPhone = manager ? manager.phone : "";
-
-    // UI 업데이트
+    const val = e.target.value;
+    const customInput = document.getElementById('sales-manager-custom');
     const phoneInput = document.getElementById('sales-manager-phone');
-    if (phoneInput) {
-        phoneInput.value = state.salesManagerPhone;
+
+    if (val === '__custom__') {
+        customInput.style.display = 'block';
+        state.salesManager = '';
+        state.salesManagerPhone = '';
+        if (phoneInput) phoneInput.value = '';
+    } else {
+        customInput.style.display = 'none';
+        const manager = SALES_MANAGERS.find(m => m.name === val);
+        state.salesManager = val;
+        state.salesManagerPhone = manager ? manager.phone : '';
+        if (phoneInput) phoneInput.value = state.salesManagerPhone;
     }
+});
+
+document.getElementById('sales-manager-custom').addEventListener('input', (e) => {
+    state.salesManager = e.target.value;
+    state.salesManagerPhone = '';
+});
+
+document.getElementById('quotation-date').addEventListener('input', (e) => {
+    state.quotationDate = e.target.value;
 });
 
 // ---- Condition Table Inputs ----
@@ -870,6 +885,8 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     state.useAprDay = "";
     state.managerPhone = "";
     state.salesManager = "";
+    state.salesManagerPhone = "";
+    state.quotationDate = "";
     state.inspectionFrequency = "1회";
     state.maintenanceFrequency = "2회";
     state.appointmentFrequency = "12개월";
@@ -887,6 +904,10 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     document.getElementById('manager').value = "";
     document.getElementById('manager-phone').value = "";
     document.getElementById('sales-manager').value = "";
+    const customInput = document.getElementById('sales-manager-custom');
+    if (customInput) { customInput.value = ''; customInput.style.display = 'none'; }
+    const quotationDateInput = document.getElementById('quotation-date');
+    if (quotationDateInput) quotationDateInput.value = '';
 
     // Building register UI reset
     document.getElementById('building-result-panel').style.display = 'none';
@@ -922,7 +943,7 @@ const PDF_SERVER_URL = (window.location.port === '3000' || window.location.hostn
 
 // ---- Mapping Logic for Export ----
 function generateMapping() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = state.quotationDate || new Date().toISOString().slice(0, 10);
     const costs = state.results.costs;
     const subtotal = costs.inspection + costs.maintenance + costs.appointment;
 
