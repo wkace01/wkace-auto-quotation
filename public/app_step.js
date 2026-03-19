@@ -823,7 +823,15 @@ document.getElementById('sales-manager-custom').addEventListener('input', (e) =>
 
 document.getElementById('sales-manager-phone').addEventListener('input', (e) => {
     if (!e.target.hasAttribute('readonly')) {
-        state.salesManagerPhone = e.target.value;
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+        let formatted = digits;
+        if (digits.length > 7) {
+            formatted = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+        } else if (digits.length > 3) {
+            formatted = digits.slice(0, 3) + '-' + digits.slice(3);
+        }
+        e.target.value = formatted;
+        state.salesManagerPhone = formatted;
     }
 });
 
@@ -985,6 +993,11 @@ const PDF_SERVER_URL = (window.location.port === '3000' || window.location.hostn
     : '/generate-pdf';
 
 // ---- Mapping Logic for Export ----
+function formatKoreanDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return `${y}년 ${m}월 ${d}일`;
+}
+
 function generateMapping() {
     const today = state.quotationDate || new Date().toISOString().slice(0, 10);
     const costs = state.results.costs;
@@ -1002,7 +1015,8 @@ function generateMapping() {
 
     return {
         "표지": [
-            { name: "고객명", cell: "F10", value: state.customerName }
+            { name: "고객명", cell: "F10", value: state.customerName },
+            { name: "견적일", cell: "A18", value: formatKoreanDate(today) }
         ],
         "1. 견적서": [
             { name: "견적일", cell: "E8", value: today },

@@ -151,20 +151,21 @@ window.airtableService = {
      * 4. 견적 기록 생성 (Proxy 사용)
      */
     createQuotation: async (customerId, state) => {
-        const { results, salesManager, itemToggles, maintenanceFrequency, appointmentFrequency } = state;
-        
+        const { results, salesManager, itemToggles, maintenanceFrequency, appointmentFrequency, quotationDate } = state;
+
         const serviceTypes = [];
         if (itemToggles.inspection)  serviceTypes.push('성능');
         if (itemToggles.maintenance) serviceTypes.push('유지');
         if (itemToggles.appointment) serviceTypes.push('위탁선임');
 
         const today = new Date().toISOString().split('T')[0];
+        const quoteDate = quotationDate || today;
 
         // null/undefined 필드는 제외 (Airtable 링크드 필드에 null 전송 시 422 에러)
         const fields = {
             '고객 고유 ID': [customerId],
             '견적 금액': results?.costs?.yearly ?? 0,
-            '견적서 발송일': today
+            '견적서 발송일': quoteDate
         };
         // 서비스 유형: 빈 배열도 오류 날 수 있으므로 값 있을 때만 추가
         if (serviceTypes.length > 0) fields['서비스 유형'] = serviceTypes;
