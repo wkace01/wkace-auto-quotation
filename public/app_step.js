@@ -41,6 +41,8 @@ const state = {
     },
     discount: 0, // 할인율 (%)
     includeVAT: false, // 부가세 포함 여부
+    useMultiplier: false, // 견적 조정 배수 적용 여부
+    multiplier: 1.5,      // 견적 조정 배수 (기본 1.5배)
     results: {
         grade: "",
         coef: 1,
@@ -146,8 +148,10 @@ function calculate() {
     state.results.costs.maintenance = eff.yearlyMaintenance;
     state.results.costs.appointment = eff.yearlyAppointment;
 
-    // Total before discount
-    const subtotal = eff.yearlyInspection + eff.yearlyMaintenance + eff.yearlyAppointment;
+    // Total before discount (배수 적용)
+    const baseSubtotal = eff.yearlyInspection + eff.yearlyMaintenance + eff.yearlyAppointment;
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    const subtotal = Math.round(baseSubtotal * mult);
     // Apply discount
     const discountAmount = Math.round(subtotal * (state.discount / 100));
     const subtotalAfterDiscount = subtotal - discountAmount;
@@ -227,7 +231,9 @@ function updateConditionPanel(condition) {
 
     document.getElementById('cond-discount-display').textContent = state.discount + '%';
 
-    const subtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
+    const baseSubtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    const subtotal = Math.round(baseSubtotal * mult);
     const discountAmount = Math.round(subtotal * (state.discount / 100));
     const subtotalAfterDiscount = subtotal - discountAmount;
     const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
@@ -235,6 +241,19 @@ function updateConditionPanel(condition) {
     const monthlyTotal = Math.floor(yearlyTotal / 12);
     document.getElementById('cond-yearly-total').textContent = fmt(yearlyTotal) + '원' + (state.includeVAT ? ' (부가세 포함)' : '');
     document.getElementById('cond-monthly-total').textContent = fmt(monthlyTotal) + '원';
+
+    // 견적 조정 배수 UI 동기화
+    const multDisplay = document.getElementById('multiplier-value');
+    if (multDisplay) multDisplay.textContent = state.multiplier.toFixed(1) + '배';
+    const multControls = document.getElementById('multiplier-controls');
+    if (multControls) multControls.style.display = state.useMultiplier ? 'flex' : 'none';
+    const hint = document.getElementById('multiplier-hint');
+    if (hint) {
+        const showHint = !state.itemToggles.appointment &&
+                         (state.itemToggles.inspection || state.itemToggles.maintenance) &&
+                         !state.useMultiplier;
+        hint.style.display = showHint ? 'inline' : 'none';
+    }
 
     // 수정된 필드 하이라이트
     ['monthly-appointment', 'yearly-appointment', 'yearly-maintenance', 'yearly-inspection', 'inspection-workers', 'maintenance-workers'].forEach(key => {
@@ -845,13 +864,43 @@ document.getElementById('quotation-date').addEventListener('input', (e) => {
 });
 
 // 부가세 토글 버튼
-document.querySelectorAll('.btn-vat').forEach(btn => {
+document.querySelectorAll('.btn-vat[data-vat]').forEach(btn => {
     btn.addEventListener('click', () => {
         state.includeVAT = btn.dataset.vat === 'true';
-        document.querySelectorAll('.btn-vat').forEach(b => b.classList.remove('active-vat'));
+        document.querySelectorAll('.btn-vat[data-vat]').forEach(b => b.classList.remove('active-vat'));
         btn.classList.add('active-vat');
         calculate();
     });
+});
+
+// 견적 조정 배수 토글 버튼
+document.querySelectorAll('.btn-vat[data-multiplier]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const applying = btn.dataset.multiplier === 'true';
+        state.useMultiplier = applying;
+        // 적용 클릭 시 위탁선임 포함 여부에 따라 기본 배수 자동 설정
+        if (applying) {
+            if (!state.itemToggles.appointment &&
+                (state.itemToggles.inspection || state.itemToggles.maintenance)) {
+                state.multiplier = 1.1;  // 위탁선임 OFF → 10% 인상
+            } else {
+                state.multiplier = 1.5;  // 위탁선임 포함 → 지역 가중치 기본값
+            }
+        }
+        document.querySelectorAll('.btn-vat[data-multiplier]').forEach(b => b.classList.remove('active-vat'));
+        btn.classList.add('active-vat');
+        calculate();
+    });
+});
+
+// 견적 조정 배수 +/- 버튼 (step: 0.1, min: 1.0)
+document.getElementById('btn-multiplier-plus').addEventListener('click', () => {
+    state.multiplier = Math.round((state.multiplier + 0.1) * 10) / 10;
+    calculate();
+});
+document.getElementById('btn-multiplier-minus').addEventListener('click', () => {
+    state.multiplier = Math.max(1.0, Math.round((state.multiplier - 0.1) * 10) / 10);
+    calculate();
 });
 
 // ---- Condition Table Inputs ----
@@ -938,9 +987,14 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     state.condOverride = {};
     state.itemToggles = { appointment: true, maintenance: true, inspection: true };
     state.includeVAT = false;
-    document.querySelectorAll('.btn-vat').forEach(b => b.classList.remove('active-vat'));
+    document.querySelectorAll('.btn-vat[data-vat]').forEach(b => b.classList.remove('active-vat'));
     const vatBtnDefault = document.querySelector('.btn-vat[data-vat="false"]');
     if (vatBtnDefault) vatBtnDefault.classList.add('active-vat');
+    state.useMultiplier = false;
+    state.multiplier = 1.5;
+    document.querySelectorAll('.btn-vat[data-multiplier]').forEach(b => b.classList.remove('active-vat'));
+    const multBtnDefault = document.querySelector('.btn-vat[data-multiplier="false"]');
+    if (multBtnDefault) multBtnDefault.classList.add('active-vat');
     state._lastConditionArea = -1;
     _lastBuildingResult = null;
 
