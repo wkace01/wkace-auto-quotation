@@ -876,7 +876,17 @@ document.querySelectorAll('.btn-vat[data-vat]').forEach(btn => {
 // 견적 조정 배수 토글 버튼
 document.querySelectorAll('.btn-vat[data-multiplier]').forEach(btn => {
     btn.addEventListener('click', () => {
-        state.useMultiplier = btn.dataset.multiplier === 'true';
+        const applying = btn.dataset.multiplier === 'true';
+        state.useMultiplier = applying;
+        // 적용 클릭 시 위탁선임 포함 여부에 따라 기본 배수 자동 설정
+        if (applying) {
+            if (!state.itemToggles.appointment &&
+                (state.itemToggles.inspection || state.itemToggles.maintenance)) {
+                state.multiplier = 1.1;  // 위탁선임 OFF → 10% 인상
+            } else {
+                state.multiplier = 1.5;  // 위탁선임 포함 → 지역 가중치 기본값
+            }
+        }
         document.querySelectorAll('.btn-vat[data-multiplier]').forEach(b => b.classList.remove('active-vat'));
         btn.classList.add('active-vat');
         calculate();
