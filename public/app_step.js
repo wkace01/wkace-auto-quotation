@@ -229,9 +229,11 @@ function updateConditionPanel(condition) {
 
     const subtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
     const discountAmount = Math.round(subtotal * (state.discount / 100));
-    const yearlyTotal = subtotal - discountAmount;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
+    const yearlyTotal = subtotalAfterDiscount + vatAmount;
     const monthlyTotal = Math.floor(yearlyTotal / 12);
-    document.getElementById('cond-yearly-total').textContent = fmt(yearlyTotal) + '원';
+    document.getElementById('cond-yearly-total').textContent = fmt(yearlyTotal) + '원' + (state.includeVAT ? ' (부가세 포함)' : '');
     document.getElementById('cond-monthly-total').textContent = fmt(monthlyTotal) + '원';
 
     // 수정된 필드 하이라이트
@@ -796,20 +798,37 @@ document.getElementById('sales-manager').addEventListener('change', (e) => {
         customInput.style.display = 'block';
         state.salesManager = '';
         state.salesManagerPhone = '';
-        if (phoneInput) phoneInput.value = '';
+        if (phoneInput) {
+            phoneInput.value = '';
+            phoneInput.removeAttribute('readonly');
+            phoneInput.placeholder = '010-0000-0000';
+        }
     } else {
         customInput.style.display = 'none';
         const manager = SALES_MANAGERS.find(m => m.name === val);
         state.salesManager = val;
         state.salesManagerPhone = manager ? manager.phone : '';
-        if (phoneInput) phoneInput.value = state.salesManagerPhone;
+        if (phoneInput) {
+            phoneInput.value = state.salesManagerPhone;
+            phoneInput.setAttribute('readonly', true);
+        }
     }
 });
 
 document.getElementById('sales-manager-custom').addEventListener('input', (e) => {
     state.salesManager = e.target.value;
-    state.salesManagerPhone = '';
 });
+
+document.getElementById('sales-manager-phone').addEventListener('input', (e) => {
+    if (!e.target.hasAttribute('readonly')) {
+        state.salesManagerPhone = e.target.value;
+    }
+});
+
+// 견적일 기본값: 오늘 날짜
+const _todayStr = new Date().toISOString().slice(0, 10);
+state.quotationDate = _todayStr;
+document.getElementById('quotation-date').value = _todayStr;
 
 document.getElementById('quotation-date').addEventListener('input', (e) => {
     state.quotationDate = e.target.value;
@@ -927,7 +946,9 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     const customInput = document.getElementById('sales-manager-custom');
     if (customInput) { customInput.value = ''; customInput.style.display = 'none'; }
     const quotationDateInput = document.getElementById('quotation-date');
-    if (quotationDateInput) quotationDateInput.value = '';
+    const _resetToday = new Date().toISOString().slice(0, 10);
+    state.quotationDate = _resetToday;
+    if (quotationDateInput) quotationDateInput.value = _resetToday;
 
     // Building register UI reset
     document.getElementById('building-result-panel').style.display = 'none';
