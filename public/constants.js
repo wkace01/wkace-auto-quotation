@@ -7,13 +7,13 @@ window.CONSTANTS = {
         // 10,000이상 ~ 15,000미만: 초급
         { area: 10000,  grade: "초급", monthlyAppointment:  80000, yearlyAppointment:  960000, yearlyMaintenance:  405000, yearlyInspection: 1335000, inspectionWorkers: 4, maintenanceWorkers: 4 },
         // 15,000이상 ~ 30,000미만: 중급
-        { area: 15000,  grade: "중급", monthlyAppointment: 130000, yearlyAppointment: 1560000, yearlyMaintenance:  495000, yearlyInspection: 1245000, inspectionWorkers: 6, maintenanceWorkers: 6 },
+        { area: 15000,  grade: "중급", monthlyAppointment: 130000, yearlyAppointment: 1560000, yearlyMaintenance:  450000, yearlyInspection:  990000, inspectionWorkers: 6, maintenanceWorkers: 6 },
         // 30,000이상 ~ 60,000미만: 고급
-        { area: 30000,  grade: "고급", monthlyAppointment: 150000, yearlyAppointment: 1800000, yearlyMaintenance:  600000, yearlyInspection: 1600000, inspectionWorkers: 8, maintenanceWorkers: 8 },
+        { area: 30000,  grade: "고급", monthlyAppointment: 150000, yearlyAppointment: 1800000, yearlyMaintenance:  630000, yearlyInspection: 1770000, inspectionWorkers: 8, maintenanceWorkers: 8 },
         // 60,000이상 ~ 150,000미만: 특급
-        { area: 60000,  grade: "특급", monthlyAppointment: 180000, yearlyAppointment: 2160000, yearlyMaintenance: 1044000, yearlyInspection: 3756000, inspectionWorkers: 10, maintenanceWorkers: 10 },
+        { area: 60000,  grade: "특급", monthlyAppointment: 180000, yearlyAppointment: 2160000, yearlyMaintenance:  810000, yearlyInspection: 2430000, inspectionWorkers: 10, maintenanceWorkers: 10 },
         // 150,000이상: 특급
-        { area: 150000, grade: "특급", monthlyAppointment: 200000, yearlyAppointment: 2400000, yearlyMaintenance: 1035000, yearlyInspection: 3465000, inspectionWorkers: 10, maintenanceWorkers: 10 }
+        { area: 150000, grade: "특급", monthlyAppointment: 180000, yearlyAppointment: 2160000, yearlyMaintenance:  810000, yearlyInspection: 2430000, inspectionWorkers: 10, maintenanceWorkers: 10 }
     ],
 
     ADJUSTMENT_COEFFICIENTS: [
