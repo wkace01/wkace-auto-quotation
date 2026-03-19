@@ -12,6 +12,7 @@ const {
 // ---- State ----
 const state = {
     customerName: "",
+    inspectionFrequency: "1회",
     maintenanceFrequency: "2회",
     appointmentFrequency: "12개월",
     floorArea: 0,
@@ -211,6 +212,8 @@ function updateConditionPanel(condition) {
         }
     });
 
+    const iFreq = document.getElementById('cond-inspection-frequency');
+    if (iFreq && document.activeElement !== iFreq) iFreq.value = state.inspectionFrequency;
     const mFreq = document.getElementById('cond-maintenance-frequency');
     if (mFreq && document.activeElement !== mFreq) mFreq.value = state.maintenanceFrequency;
     const aFreq = document.getElementById('cond-appointment-frequency');
@@ -299,7 +302,7 @@ function renderTabs() {
         <tr><td>대상물 (고객명)</td><td>${state.customerName || '-'}</td><td></td></tr>
         <tr><td>연면적</td><td>${state.floorArea.toLocaleString()} ㎡</td><td>등급: <span style="font-weight:600; color:var(--toss-blue);">${state.results.grade}</span></td></tr>
         <tr><td>담당자 정보</td><td>${state.manager || '-'} ${state.managerPosition ? '(' + state.managerPosition + ')' : ''}</td><td>${state.managerPhone || '-'} ${state.managerMobile ? ' / ' + state.managerMobile : ''}</td></tr>
-        <tr><td>성능점검</td><td>₩ ${state.results.costs.inspection.toLocaleString()}</td><td>연 1회</td></tr>
+        <tr><td>성능점검</td><td>₩ ${state.results.costs.inspection.toLocaleString()}</td><td>${state.inspectionFrequency}</td></tr>
         <tr><td>유지점검</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td><td>${state.maintenanceFrequency}</td></tr>
         <tr><td>위탁선임</td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td><td>${state.appointmentFrequency}</td></tr>
         ${discountRow}
@@ -843,6 +846,9 @@ Object.entries(COND_INPUT_MAP).forEach(([elId, stateKey]) => {
     }
 });
 
+document.getElementById('cond-inspection-frequency').addEventListener('input', (e) => {
+    state.inspectionFrequency = e.target.value;
+});
 document.getElementById('cond-maintenance-frequency').addEventListener('input', (e) => {
     state.maintenanceFrequency = e.target.value;
     updateUI();
@@ -864,6 +870,7 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     state.useAprDay = "";
     state.managerPhone = "";
     state.salesManager = "";
+    state.inspectionFrequency = "1회";
     state.maintenanceFrequency = "2회";
     state.appointmentFrequency = "12개월";
     state.condOverride = {};

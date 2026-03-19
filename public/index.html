@@ -124,7 +124,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>담당자명</label>
+                    <label>거래처 담당자</label>
                     <input type="text" id="manager" placeholder="홍길동">
                 </div>
                 <div class="form-group">
@@ -186,29 +186,27 @@
                 </div>
 
                 <div style="padding: 0 1.5rem 1.5rem;">
-                    <div class="cond-group-title">선임위탁 비용</div>
-                    <div class="cond-row" data-row-item="appointment">
+                    <div class="cond-group-title">성능점검 비용</div>
+                    <div class="cond-row" data-row-item="inspection">
                         <span class="cond-label">
-                            <button class="btn-toggle-item" data-item="appointment" title="항목 제외/포함"><i
+                            <button class="btn-toggle-item" data-item="inspection" title="항목 제외/포함"><i
                                     class="fas fa-minus-circle"></i></button>
-                            월 단가
+                            성능점검
                         </span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-monthly-appointment">-</button>
-                            <input type="text" id="cond-monthly-appointment" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-monthly-appointment">+</button>
+                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-inspection">-</button>
+                            <input type="text" id="cond-yearly-inspection" class="cond-input cond-field">
+                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-inspection">+</button>
                         </div>
                     </div>
-                    <div class="cond-row" data-row-item="appointment">
-                        <span class="cond-label">연간 합계</span>
+                    <div class="cond-row" data-row-item="inspection">
+                        <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">성능 점검 횟수</span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-appointment">-</button>
-                            <input type="text" id="cond-yearly-appointment" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-appointment">+</button>
+                            <input type="text" id="cond-inspection-frequency" class="cond-input" style="width: 100px; text-align: center;" placeholder="1회">
                         </div>
                     </div>
 
-                    <div class="cond-group-title">유지·성능점검 비용</div>
+                    <div class="cond-group-title">유지점검 비용</div>
                     <div class="cond-row" data-row-item="maintenance">
                         <span class="cond-label">
                             <button class="btn-toggle-item" data-item="maintenance" title="항목 제외/포함"><i
@@ -227,16 +225,28 @@
                             <input type="text" id="cond-maintenance-frequency" class="cond-input" style="width: 100px; text-align: center;" placeholder="2회">
                         </div>
                     </div>
-                    <div class="cond-row" data-row-item="inspection">
+
+                    <div class="cond-row" data-row-item="appointment">
                         <span class="cond-label">
-                            <button class="btn-toggle-item" data-item="inspection" title="항목 제외/포함"><i
+                            <button class="btn-toggle-item" data-item="appointment" title="항목 제외/포함"><i
                                     class="fas fa-minus-circle"></i></button>
-                            성능점검
+                            위탁선임 비용
                         </span>
+                    </div>
+                    <div class="cond-row" data-row-item="appointment">
+                        <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">월 단가</span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-inspection">-</button>
-                            <input type="text" id="cond-yearly-inspection" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-inspection">+</button>
+                            <button class="btn-adj" data-adj="-10000" data-target="cond-monthly-appointment">-</button>
+                            <input type="text" id="cond-monthly-appointment" class="cond-input cond-field">
+                            <button class="btn-adj" data-adj="10000" data-target="cond-monthly-appointment">+</button>
+                        </div>
+                    </div>
+                    <div class="cond-row" data-row-item="appointment">
+                        <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">연간 합계</span>
+                        <div class="cond-controls">
+                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-appointment">-</button>
+                            <input type="text" id="cond-yearly-appointment" class="cond-input cond-field">
+                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-appointment">+</button>
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="appointment">
