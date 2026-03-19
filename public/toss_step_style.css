@@ -714,3 +714,20 @@ body, .stat-label, .stat-value, .data-table td, .data-table th, .cond-label, .ca
     }
 }
 
+
+/* VAT toggle buttons */
+.btn-vat {
+    padding: 0.3rem 1rem;
+    border: 1px solid var(--toss-blue);
+    border-radius: 6px;
+    background: white;
+    color: var(--toss-blue);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-vat.active-vat {
+    background: var(--toss-blue);
+    color: white;
+}

@@ -128,15 +128,15 @@
                     <input type="text" id="manager" placeholder="홍길동">
                 </div>
                 <div class="form-group">
-                    <label>담당자 연락처</label>
-                    <input type="text" id="manager-phone" placeholder="010-0000-0000">
+                    <label>거래처 연락처</label>
+                    <input type="text" id="manager-phone" placeholder="031-0000-0000">
                 </div>
                 <div class="form-group">
-                    <label>담당자 직함</label>
+                    <label>거래처 담당자 직함</label>
                     <input type="text" id="manager-position" placeholder="예: 관리소장">
                 </div>
                 <div class="form-group">
-                    <label>담당자 휴대전화</label>
+                    <label>거래처 담당자 휴대전화</label>
                     <input type="text" id="manager-mobile" placeholder="010-0000-0000">
                 </div>
                 <div class="form-group">
@@ -149,8 +149,7 @@
                         <option value="">담당자 선택</option>
                         <option value="박진철">박진철</option>
                         <option value="임학빈">임학빈</option>
-                        <option value="공대은">공대은</option>
-                        <option value="이태평">이태평</option>
+
                         <option value="전무승">전무승</option>
                         <option value="김태훈">김태훈</option>
                         <option value="이정국">이정국</option>
@@ -162,11 +161,17 @@
                         <option value="박민수">박민수</option>
                         <option value="이우현">이우현</option>
                         <option value="고윤성">고윤성</option>
+                        <option value="__custom__">직접 입력...</option>
                     </select>
+                    <input type="text" id="sales-manager-custom" placeholder="이름 직접 입력" style="display:none; margin-top:0.5rem;">
                 </div>
                 <div class="form-group">
                     <label>영업 담당자 연락처</label>
                     <input type="text" id="sales-manager-phone" placeholder="010-0000-0000" readonly>
+                </div>
+                <div class="form-group">
+                    <label>견적일</label>
+                    <input type="date" id="quotation-date">
                 </div>
             </div>
             </div><!-- End card-building-info -->
@@ -194,9 +199,9 @@
                             성능점검
                         </span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-inspection">-</button>
+                            <button class="btn-adj" data-adj="-50000" data-target="cond-yearly-inspection">-</button>
                             <input type="text" id="cond-yearly-inspection" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-inspection">+</button>
+                            <button class="btn-adj" data-adj="50000" data-target="cond-yearly-inspection">+</button>
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="inspection">
@@ -214,9 +219,9 @@
                             유지점검
                         </span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-maintenance">-</button>
+                            <button class="btn-adj" data-adj="-50000" data-target="cond-yearly-maintenance">-</button>
                             <input type="text" id="cond-yearly-maintenance" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-maintenance">+</button>
+                            <button class="btn-adj" data-adj="50000" data-target="cond-yearly-maintenance">+</button>
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="maintenance">
@@ -236,17 +241,17 @@
                     <div class="cond-row" data-row-item="appointment">
                         <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">월 단가</span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-monthly-appointment">-</button>
+                            <button class="btn-adj" data-adj="-50000" data-target="cond-monthly-appointment">-</button>
                             <input type="text" id="cond-monthly-appointment" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-monthly-appointment">+</button>
+                            <button class="btn-adj" data-adj="50000" data-target="cond-monthly-appointment">+</button>
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="appointment">
                         <span class="cond-label" style="padding-left: 2rem; font-size: 0.85rem; color: var(--toss-text-sub);">연간 합계</span>
                         <div class="cond-controls">
-                            <button class="btn-adj" data-adj="-10000" data-target="cond-yearly-appointment">-</button>
+                            <button class="btn-adj" data-adj="-50000" data-target="cond-yearly-appointment">-</button>
                             <input type="text" id="cond-yearly-appointment" class="cond-input cond-field">
-                            <button class="btn-adj" data-adj="10000" data-target="cond-yearly-appointment">+</button>
+                            <button class="btn-adj" data-adj="50000" data-target="cond-yearly-appointment">+</button>
                         </div>
                     </div>
                     <div class="cond-row" data-row-item="appointment">
@@ -264,6 +269,13 @@
                             <span id="cond-discount-display"
                                 style="width:50px; text-align:center; font-weight:700; font-size:1.1rem;">0%</span>
                             <button class="btn-adj-discount" data-adj="10">+</button>
+                        </div>
+                    </div>
+                    <div class="cond-row">
+                        <span class="cond-label">부가세 (10%)</span>
+                        <div class="cond-controls" style="background:transparent; padding:0; gap:0.5rem; display:flex;">
+                            <button class="btn-vat active-vat" data-vat="false">별도</button>
+                            <button class="btn-vat" data-vat="true">포함</button>
                         </div>
                     </div>
                     <div class="cond-row">

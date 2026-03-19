@@ -30,6 +30,7 @@ const state = {
     managerEmail: "",
     salesManager: "",
     salesManagerPhone: "",
+    quotationDate: "",
     selectedEquipments: new Set(),
     condOverride: {},         // 사용자가 수정한 조건표 값 { key: value }
     _lastConditionArea: -1,  // 이전 구간 추적 (구간 변경 시 override 초기화용)
@@ -39,12 +40,13 @@ const state = {
         inspection: true
     },
     discount: 0, // 할인율 (%)
+    includeVAT: false, // 부가세 포함 여부
     results: {
         grade: "",
         coef: 1,
         inspectionWorkers: 0,
         maintenanceWorkers: 0,
-        costs: { inspection: 0, maintenance: 0, appointment: 0, yearly: 0, monthly: 0 }
+        costs: { inspection: 0, maintenance: 0, appointment: 0, yearly: 0, monthly: 0, vat: 0 }
     }
 };
 
@@ -148,7 +150,11 @@ function calculate() {
     const subtotal = eff.yearlyInspection + eff.yearlyMaintenance + eff.yearlyAppointment;
     // Apply discount
     const discountAmount = Math.round(subtotal * (state.discount / 100));
-    state.results.costs.yearly = subtotal - discountAmount;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    // Apply VAT
+    const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
+    state.results.costs.vat = vatAmount;
+    state.results.costs.yearly = subtotalAfterDiscount + vatAmount;
     state.results.costs.monthly = Math.floor(state.results.costs.yearly / 12);
 
     // \uc870\uac74\ud45c \ud328\ub110 \uc5c5\ub370\uc774\ud2b8
@@ -223,9 +229,11 @@ function updateConditionPanel(condition) {
 
     const subtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
     const discountAmount = Math.round(subtotal * (state.discount / 100));
-    const yearlyTotal = subtotal - discountAmount;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
+    const yearlyTotal = subtotalAfterDiscount + vatAmount;
     const monthlyTotal = Math.floor(yearlyTotal / 12);
-    document.getElementById('cond-yearly-total').textContent = fmt(yearlyTotal) + '원';
+    document.getElementById('cond-yearly-total').textContent = fmt(yearlyTotal) + '원' + (state.includeVAT ? ' (부가세 포함)' : '');
     document.getElementById('cond-monthly-total').textContent = fmt(monthlyTotal) + '원';
 
     // 수정된 필드 하이라이트
@@ -306,7 +314,8 @@ function renderTabs() {
         <tr><td>유지점검</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td><td>${state.maintenanceFrequency}</td></tr>
         <tr><td>위탁선임</td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td><td>${state.appointmentFrequency}</td></tr>
         ${discountRow}
-        <tr style="font-weight:700; color:var(--toss-blue)"><td>최종 합계 (연간)</td><td>₩ ${state.results.costs.yearly.toLocaleString()}</td><td>부가세 별도</td></tr>
+        ${state.results.costs.vat > 0 ? `<tr style="color:#059669"><td>부가세 (10%)</td><td>+ ₩ ${state.results.costs.vat.toLocaleString()}</td><td>합계의 10%</td></tr>` : ''}
+        <tr style="font-weight:700; color:var(--toss-blue)"><td>최종 합계 (연간)</td><td>₩ ${state.results.costs.yearly.toLocaleString()}</td><td>${state.includeVAT ? '부가세 포함' : '부가세 별도'}</td></tr>
         <tr style="font-weight:600"><td>월 납부액</td><td>₩ ${state.results.costs.monthly.toLocaleString()}</td><td>÷12</td></tr>
     `;
 
@@ -781,17 +790,58 @@ document.getElementById('manager-email').addEventListener('input', (e) => {
 
 // 영업 담당자 변경 시 연락처 자동 입력
 document.getElementById('sales-manager').addEventListener('change', (e) => {
-    const selectedName = e.target.value;
-    const manager = SALES_MANAGERS.find(m => m.name === selectedName);
-
-    state.salesManager = selectedName;
-    state.salesManagerPhone = manager ? manager.phone : "";
-
-    // UI 업데이트
+    const val = e.target.value;
+    const customInput = document.getElementById('sales-manager-custom');
     const phoneInput = document.getElementById('sales-manager-phone');
-    if (phoneInput) {
-        phoneInput.value = state.salesManagerPhone;
+
+    if (val === '__custom__') {
+        customInput.style.display = 'block';
+        state.salesManager = '';
+        state.salesManagerPhone = '';
+        if (phoneInput) {
+            phoneInput.value = '';
+            phoneInput.removeAttribute('readonly');
+            phoneInput.placeholder = '010-0000-0000';
+        }
+    } else {
+        customInput.style.display = 'none';
+        const manager = SALES_MANAGERS.find(m => m.name === val);
+        state.salesManager = val;
+        state.salesManagerPhone = manager ? manager.phone : '';
+        if (phoneInput) {
+            phoneInput.value = state.salesManagerPhone;
+            phoneInput.setAttribute('readonly', true);
+        }
     }
+});
+
+document.getElementById('sales-manager-custom').addEventListener('input', (e) => {
+    state.salesManager = e.target.value;
+});
+
+document.getElementById('sales-manager-phone').addEventListener('input', (e) => {
+    if (!e.target.hasAttribute('readonly')) {
+        state.salesManagerPhone = e.target.value;
+    }
+});
+
+// 견적일 기본값: 오늘 날짜
+const _todayStr = new Date().toISOString().slice(0, 10);
+state.quotationDate = _todayStr;
+document.getElementById('quotation-date').value = _todayStr;
+
+document.getElementById('quotation-date').addEventListener('input', (e) => {
+    state.quotationDate = e.target.value;
+});
+
+// 부가세 토글 버튼
+document.querySelectorAll('.btn-vat').forEach(btn => {
+    btn.addEventListener('click', () => {
+        state.includeVAT = btn.dataset.vat === 'true';
+        document.querySelectorAll('.btn-vat').forEach(b => b.classList.remove('active-vat'));
+        btn.classList.add('active-vat');
+        calculate();
+    });
 });
 
 // ---- Condition Table Inputs ----
@@ -870,11 +920,17 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     state.useAprDay = "";
     state.managerPhone = "";
     state.salesManager = "";
+    state.salesManagerPhone = "";
+    state.quotationDate = "";
     state.inspectionFrequency = "1회";
     state.maintenanceFrequency = "2회";
     state.appointmentFrequency = "12개월";
     state.condOverride = {};
     state.itemToggles = { appointment: true, maintenance: true, inspection: true };
+    state.includeVAT = false;
+    document.querySelectorAll('.btn-vat').forEach(b => b.classList.remove('active-vat'));
+    const vatBtnDefault = document.querySelector('.btn-vat[data-vat="false"]');
+    if (vatBtnDefault) vatBtnDefault.classList.add('active-vat');
     state._lastConditionArea = -1;
     _lastBuildingResult = null;
 
@@ -887,6 +943,12 @@ document.getElementById('btn-reset-addr').addEventListener('click', () => {
     document.getElementById('manager').value = "";
     document.getElementById('manager-phone').value = "";
     document.getElementById('sales-manager').value = "";
+    const customInput = document.getElementById('sales-manager-custom');
+    if (customInput) { customInput.value = ''; customInput.style.display = 'none'; }
+    const quotationDateInput = document.getElementById('quotation-date');
+    const _resetToday = new Date().toISOString().slice(0, 10);
+    state.quotationDate = _resetToday;
+    if (quotationDateInput) quotationDateInput.value = _resetToday;
 
     // Building register UI reset
     document.getElementById('building-result-panel').style.display = 'none';
@@ -922,7 +984,7 @@ const PDF_SERVER_URL = (window.location.port === '3000' || window.location.hostn
 
 // ---- Mapping Logic for Export ----
 function generateMapping() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = state.quotationDate || new Date().toISOString().slice(0, 10);
     const costs = state.results.costs;
     const subtotal = costs.inspection + costs.maintenance + costs.appointment;
 
@@ -957,6 +1019,8 @@ function generateMapping() {
             { name: "합계(할인전)", cell: "T26", value: subtotal },
             { name: "최종 연간 금액", cell: "T27", value: costs.yearly },
             { name: "월 납부액", cell: "T28", value: costs.monthly },
+            { name: "부가세 여부", cell: "T29", value: state.includeVAT ? '포함' : '별도' },
+            { name: "부가세 금액", cell: "T30", value: costs.vat || 0 },
             { name: "건물등급", cell: "Y25", value: state.results.grade }
         ],
         "2.1 성능점검 산출내역": [
