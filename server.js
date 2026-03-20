@@ -85,9 +85,12 @@ app.post('/generate-pdf', async (req, res) => {
             } catch { return '견적서'; }
         })();
         const salesManager = safeStr(meta.salesManager);
-        const fileName = salesManager
-            ? `${uniqueId}_견적서_${customerName}_${salesManager}.pdf`
-            : `${uniqueId}_견적서_${customerName}.pdf`;
+        const managerName = safeStr(meta.managerName);
+        const managerPosition = safeStr(meta.managerPosition);
+        const contactSuffix = managerName
+            ? (managerPosition ? `_${managerName}_${managerPosition}님` : `_${managerName}님`)
+            : '';
+        const fileName = `${uniqueId}_견적서_${customerName}${contactSuffix}.pdf`;
 
         // 버퍼로 읽어서 전송 (res.sendFile은 Windows 한글 경로에서 불안정)
         const pdfBuffer = fs.readFileSync(expectedPdf);

@@ -1089,7 +1089,7 @@ function generateMapping() {
             { name: "합계(할인전)", cell: "T26", value: subtotal },
             { name: "최종 연간 금액", cell: "T27", value: costs.yearly },
             { name: "월 납부액", cell: "T28", value: costs.monthly },
-            { name: "부가세 여부", cell: "T29", value: state.includeVAT ? '포함' : '별도' },
+            { name: "부가세 여부", cell: "T29", value: state.includeVAT ? '부가세 포함' : '부가세 별도' },
             { name: "부가세 금액", cell: "T30", value: costs.vat || 0 },
             { name: "건물등급", cell: "Y25", value: state.results.grade }
         ],
@@ -1237,7 +1237,9 @@ document.getElementById('btn-save-pdf').addEventListener('click', async () => {
         pdfBody.fileNameMeta = {
             quotationUniqueId: quotationUniqueId || '',
             customerName: state.customerName || '',
-            salesManager: state.salesManager || ''
+            salesManager: state.salesManager || '',
+            managerName: state.manager || '',
+            managerPosition: state.managerPosition || ''
         };
 
         const pdfRes = await fetch(PDF_SERVER_URL, {
