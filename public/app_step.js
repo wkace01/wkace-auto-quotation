@@ -1062,10 +1062,14 @@ function generateMapping() {
     const maintB = calcLaborBreakdown(state.results.maintenanceWorkers, state.results.grade);
 
     // 선임 산출내역은 견적 조건표 상 투입인원 필드가 별도로 없으나,
-    // "등급별 선임 인원수에 따른 1명"으로 할당을 원하므로, 
+    // "등급별 선임 인원수에 따른 1명"으로 할당을 원하므로,
     // 선임 상태(itemToggles.appointment)가 켜져있으면 1명으로 계산합니다.
     const appWorkers = state.itemToggles.appointment ? 1 : 0;
     const appB = calcLaborBreakdown(appWorkers, state.results.grade);
+
+    // 2.3 선임 산출내역 전용: 템플릿 수식 H6=E6*F6*G6 (F6=12개월 자동입력)에 맞춰
+    // H10(직접인건비) = 1명 × 12개월 × 노임단가 / 직접경비·제경비·기술료 = 0
+    const appAnnualLabor = appWorkers * 12 * (GRADE_WAGES[state.results.grade] || 0);
 
     return {
         "표지": [
@@ -1138,14 +1142,16 @@ function generateMapping() {
             { name: "선임 고급 점검 노임 단가", cell: "G7", value: appB.rows[1].wage },
             { name: "선임 중급 점검 노임 단가", cell: "G8", value: appB.rows[2].wage },
             { name: "선임 초급 점검 노임 단가", cell: "G9", value: appB.rows[3].wage },
-            { name: "인건비", cell: "H10", value: appB.labor },
-            { name: "직접경비", cell: "H11", value: appB.expense },
-            { name: "제경비", cell: "H12", value: appB.general },
-            { name: "기술료", cell: "H13", value: appB.tech },
-            { name: "산출합계", cell: "H14", value: appB.total },
-            { name: "조정금액", cell: "H15", value: costs.appointment - appB.total },
+            // 2.3 전용: H6=E6*F6(12개월)*G6 템플릿 수식에 맞춰 연간 인건비 계산
+            // 직접경비·제경비·기술료는 템플릿에서 모두 0 (G11=G12=G13=0)
+            { name: "인건비", cell: "H10", value: appAnnualLabor },
+            { name: "직접경비", cell: "H11", value: 0 },
+            { name: "제경비", cell: "H12", value: 0 },
+            { name: "기술료", cell: "H13", value: 0 },
+            { name: "산출합계", cell: "H14", value: appAnnualLabor },
+            { name: "조정금액", cell: "H15", value: costs.appointment - appAnnualLabor },
             { name: "최종합계", cell: "H17", value: costs.appointment },
-            { name: "투입인력", cell: "O6", value: 0 }
+            { name: "투입인력", cell: "O6", value: appWorkers }
         ],
         "4. 성능점검 수량내역": [
             { name: "조정계수", cell: "F4", value: state.results.coef }
