@@ -205,13 +205,17 @@ function updateConditionPanel(condition) {
     document.getElementById('cond-grade').textContent = condition.grade;
     document.getElementById('cond-range-label').textContent = COND_RANGE_LABELS[condition.area] || '';
 
+    // 배수·할인율 적용된 최종 조정 금액을 input에 표시
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    const adjFactor = mult * (1 - state.discount / 100);
+
     const inputs = [
-        { id: 'cond-monthly-appointment', val: fmt(eff.monthlyAppointment) },
-        { id: 'cond-yearly-appointment', val: fmt(eff.yearlyAppointment) },
-        { id: 'cond-yearly-maintenance', val: fmt(eff.yearlyMaintenance) },
-        { id: 'cond-yearly-inspection', val: fmt(eff.yearlyInspection) },
-        { id: 'cond-inspection-workers', val: eff.inspectionWorkers },
-        { id: 'cond-maintenance-workers', val: eff.maintenanceWorkers }
+        { id: 'cond-monthly-appointment', val: fmt(Math.round(eff.monthlyAppointment * adjFactor)) },
+        { id: 'cond-yearly-appointment',  val: fmt(Math.round(eff.yearlyAppointment  * adjFactor)) },
+        { id: 'cond-yearly-maintenance',  val: fmt(Math.round(eff.yearlyMaintenance  * adjFactor)) },
+        { id: 'cond-yearly-inspection',   val: fmt(Math.round(eff.yearlyInspection   * adjFactor)) },
+        { id: 'cond-inspection-workers',  val: eff.inspectionWorkers },   // 인원수는 adjFactor 미적용
+        { id: 'cond-maintenance-workers', val: eff.maintenanceWorkers }   // 인원수는 adjFactor 미적용
     ];
 
     inputs.forEach(item => {
@@ -232,8 +236,7 @@ function updateConditionPanel(condition) {
     document.getElementById('cond-discount-display').textContent = state.discount + '%';
 
     const baseSubtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
-    const mult = state.useMultiplier ? state.multiplier : 1;
-    const subtotal = Math.round(baseSubtotal * mult);
+    const subtotal = Math.round(baseSubtotal * mult); // mult는 line 209에서 이미 선언됨
     const discountAmount = Math.round(subtotal * (state.discount / 100));
     const subtotalAfterDiscount = subtotal - discountAmount;
     const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
@@ -313,6 +316,7 @@ function updateUI() {
     document.getElementById('res-yearly').textContent = "₩ " + state.results.costs.yearly.toLocaleString();
     document.getElementById('res-monthly').textContent = "₩ " + state.results.costs.monthly.toLocaleString();
 
+
     renderTabs();
 }
 
@@ -321,6 +325,14 @@ function renderTabs() {
 
     // Tab 1: Summary
     const subtotal = state.results.costs.inspection + state.results.costs.maintenance + state.results.costs.appointment;
+
+    // 할인율·조정 배수를 반영한 항목별 실시간 표시 금액
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    const adjFactor = mult * (1 - state.discount / 100);
+    const adjInspection  = state.itemToggles.inspection  ? Math.round(state.results.costs.inspection  * adjFactor) : 0;
+    const adjMaintenance = state.itemToggles.maintenance ? Math.round(state.results.costs.maintenance * adjFactor) : 0;
+    const adjAppointment = state.itemToggles.appointment ? Math.round(state.results.costs.appointment * adjFactor) : 0;
+
     const discountRow = state.discount > 0
         ? `<tr style="color:#ef4444"><td>할인율 (${state.discount}%)</td><td>- ₩ ${Math.round(subtotal * (state.discount / 100)).toLocaleString()}</td><td>견적 할인</td></tr>`
         : '';
@@ -329,9 +341,9 @@ function renderTabs() {
         <tr><td>대상물 (고객명)</td><td>${state.customerName || '-'}</td><td></td></tr>
         <tr><td>연면적</td><td>${state.floorArea.toLocaleString()} ㎡</td><td>등급: <span style="font-weight:600; color:var(--toss-blue);">${state.results.grade}</span></td></tr>
         <tr><td>담당자 정보</td><td>${state.manager || '-'} ${state.managerPosition ? '(' + state.managerPosition + ')' : ''}</td><td>${state.managerPhone || '-'} ${state.managerMobile ? ' / ' + state.managerMobile : ''}</td></tr>
-        <tr><td>성능점검</td><td>₩ ${state.results.costs.inspection.toLocaleString()}</td><td>${state.inspectionFrequency}</td></tr>
-        <tr><td>유지점검</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td><td>${state.maintenanceFrequency}</td></tr>
-        <tr><td>위탁선임</td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td><td>${state.appointmentFrequency}</td></tr>
+        <tr><td>성능점검</td><td>₩ ${adjInspection.toLocaleString()}</td><td>${state.inspectionFrequency}</td></tr>
+        <tr><td>유지점검</td><td>₩ ${adjMaintenance.toLocaleString()}</td><td>${state.maintenanceFrequency}</td></tr>
+        <tr><td>위탁선임</td><td>₩ ${adjAppointment.toLocaleString()}</td><td>${state.appointmentFrequency}</td></tr>
         ${discountRow}
         ${state.results.costs.vat > 0 ? `<tr style="color:#059669"><td>부가세 (10%)</td><td>+ ₩ ${state.results.costs.vat.toLocaleString()}</td><td>합계의 10%</td></tr>` : ''}
         <tr style="font-weight:700; color:var(--toss-blue)"><td>최종 합계 (연간)</td><td>₩ ${state.results.costs.yearly.toLocaleString()}</td><td>${state.includeVAT ? '부가세 포함' : '부가세 별도'}</td></tr>
@@ -356,13 +368,13 @@ function renderTabs() {
         <tr style="font-weight:700; color:var(--toss-blue)">
             <td>산출 합계</td><td></td><td>₩ ${inspB.total.toLocaleString()}</td>
         </tr>
-        <tr style="color:${state.results.costs.inspection - inspB.total >= 0 ? 'var(--toss-green)' : 'var(--toss-red)'}">
+        <tr style="color:${adjInspection - inspB.total >= 0 ? 'var(--toss-green)' : 'var(--toss-red)'}">
             <td>조정 금액</td>
             <td>목표금액 − 산출합계</td>
-            <td>${state.results.costs.inspection - inspB.total >= 0 ? '+' : ''}₩ ${(state.results.costs.inspection - inspB.total).toLocaleString()}</td>
+            <td>${adjInspection - inspB.total >= 0 ? '+' : ''}₩ ${(adjInspection - inspB.total).toLocaleString()}</td>
         </tr>
         <tr style="font-weight:700; border-top:1px solid var(--toss-border); color:var(--toss-text-main);">
-            <td>최종 합계 (목표금액)</td><td>견적 조건표 적용</td><td>₩ ${state.results.costs.inspection.toLocaleString()}</td>
+            <td>최종 합계 (목표금액)</td><td>견적 조건표 적용</td><td>₩ ${adjInspection.toLocaleString()}</td>
         </tr>`;
 
     // Tab 3: Maintenance
@@ -383,20 +395,20 @@ function renderTabs() {
         <tr style="font-weight:700; color:var(--toss-blue)">
             <td>산출 합계</td><td></td><td>₩ ${maintB.total.toLocaleString()}</td>
         </tr>
-        <tr style="color:${state.results.costs.maintenance - maintB.total >= 0 ? 'var(--toss-green)' : 'var(--toss-red)'}">
+        <tr style="color:${adjMaintenance - maintB.total >= 0 ? 'var(--toss-green)' : 'var(--toss-red)'}">
             <td>조정 금액</td>
             <td>목표금액 − 산출합계</td>
-            <td>${state.results.costs.maintenance - maintB.total >= 0 ? '+' : ''}₩ ${(state.results.costs.maintenance - maintB.total).toLocaleString()}</td>
+            <td>${adjMaintenance - maintB.total >= 0 ? '+' : ''}₩ ${(adjMaintenance - maintB.total).toLocaleString()}</td>
         </tr>
         <tr style="font-weight:700; border-top:1px solid var(--toss-border); color:var(--toss-text-main);">
-            <td>최종 합계 (목표금액)</td><td>견적 조건표 적용</td><td>₩ ${state.results.costs.maintenance.toLocaleString()}</td>
+            <td>최종 합계 (목표금액)</td><td>견적 조건표 적용</td><td>₩ ${adjMaintenance.toLocaleString()}</td>
         </tr>`;
 
     // Tab 4: Appointment
     document.getElementById('tbl-q-appointment').innerHTML = `
         <tr><td>선임 등급</td><td>${state.results.grade} 1명</td><td>연면적 기준</td></tr>
-        <tr><td>월 단가</td><td>₩ ${(state.results.costs.appointment / 12).toLocaleString()}</td><td>× 12개월</td></tr>
-        <tr style="font-weight:700; color:var(--toss-text-main);"><td>연간 선임 합계</td><td></td><td>₩ ${state.results.costs.appointment.toLocaleString()}</td></tr>
+        <tr><td>월 단가</td><td>₩ ${Math.round(adjAppointment / 12).toLocaleString()}</td><td>× 12개월</td></tr>
+        <tr style="font-weight:700; color:var(--toss-text-main);"><td>연간 선임 합계</td><td></td><td>₩ ${adjAppointment.toLocaleString()}</td></tr>
     `;
 
     // 데이터 기준 토글 패널 (tab2, tab3 공통)
@@ -923,13 +935,19 @@ Object.entries(COND_INPUT_MAP).forEach(([elId, stateKey]) => {
         const raw = e.target.value.replace(/,/g, '');
         const val = parseFloat(raw);
         if (!isNaN(val)) {
-            state.condOverride[stateKey] = val;
+            // COST_FIELDS는 표시값이 BASE×adjFactor이므로 역산하여 BASE override 저장
+            const _mult = state.useMultiplier ? state.multiplier : 1;
+            const _adj = _mult * (1 - state.discount / 100);
+            const baseVal = COST_FIELDS.has(elId) && _adj > 0
+                ? Math.round(val / _adj) : val;
+
+            state.condOverride[stateKey] = baseVal;
 
             // 월 단가 수정 시 연간 합계 자동 계산 (또는 반대)
             if (elId === 'cond-monthly-appointment') {
-                state.condOverride.yearlyAppointment = val * 12;
+                state.condOverride.yearlyAppointment = baseVal * 12;
             } else if (elId === 'cond-yearly-appointment') {
-                state.condOverride.monthlyAppointment = val / 12;
+                state.condOverride.monthlyAppointment = baseVal / 12;
             }
         } else {
             delete state.condOverride[stateKey];
@@ -1057,6 +1075,13 @@ function generateMapping() {
     const costs = state.results.costs;
     const subtotal = costs.inspection + costs.maintenance + costs.appointment;
 
+    // 할인율·조정 배수를 반영한 항목별 조정 금액
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    const adjFactor = mult * (1 - state.discount / 100);
+    const adjInspection  = state.itemToggles.inspection  ? Math.round(costs.inspection  * adjFactor) : 0;
+    const adjMaintenance = state.itemToggles.maintenance ? Math.round(costs.maintenance * adjFactor) : 0;
+    const adjAppointment = state.itemToggles.appointment ? Math.round(costs.appointment * adjFactor) : 0;
+
     // 노임단가 × 투입인원 기반 인건비 산출
     const inspB = calcLaborBreakdown(state.results.inspectionWorkers, state.results.grade);
     const maintB = calcLaborBreakdown(state.results.maintenanceWorkers, state.results.grade);
@@ -1095,13 +1120,13 @@ function generateMapping() {
             { name: "담당자명", cell: "J19", value: state.manager },
             { name: "담당자 연락처", cell: "W19", value: state.managerPhone },
             { name: "서비스 항목", cell: "J20", value: serviceText },
-            { name: "성능점검비", cell: "T24", value: costs.inspection },
+            { name: "성능점검비", cell: "T24", value: adjInspection },
             { name: "성능점검 수량", cell: "P24", value: state.itemToggles.inspection  ? 1 : 0 },
             { name: "유지점검 수량", cell: "P25", value: state.itemToggles.maintenance ? 1 : 0 },
             { name: "위탁선임 수량", cell: "P26", value: state.itemToggles.appointment ? 1 : 0 },
-            { name: "유지점검비", cell: "T25", value: costs.maintenance },
-            { name: "위탁선임비", cell: "T26", value: costs.appointment },
-            { name: "합계(할인전)", cell: "T27", value: subtotal },
+            { name: "유지점검비", cell: "T25", value: adjMaintenance },
+            { name: "위탁선임비", cell: "T26", value: adjAppointment },
+            { name: "합계(할인전)", cell: "T27", value: adjInspection + adjMaintenance + adjAppointment },
             { name: "최종 연간 금액", cell: "T28", value: costs.yearly },
             { name: "월 납부액", cell: "T29", value: costs.monthly },
             { name: "부가세 여부", cell: "G22", value: state.includeVAT ? '(VAT 포함)' : '(VAT 별도)' },
@@ -1122,8 +1147,8 @@ function generateMapping() {
             { name: "제경비", cell: "H12", value: inspB.general },
             { name: "기술료", cell: "H13", value: inspB.tech },
             { name: "성능 산출합계", cell: "H14", value: inspB.total },
-            { name: "성능 조정금액", cell: "H15", value: costs.inspection - inspB.total },
-            { name: "성능 최종합계", cell: "H17", value: costs.inspection },
+            { name: "성능 조정금액", cell: "H15", value: adjInspection - inspB.total },
+            { name: "성능 최종합계", cell: "H17", value: adjInspection },
             { name: "투입인력", cell: "O6", value: state.results.inspectionWorkers }
         ],
         "2.2 유지점검 산출내역": [
@@ -1140,8 +1165,8 @@ function generateMapping() {
             { name: "제경비", cell: "H12", value: maintB.general },
             { name: "기술료", cell: "H13", value: maintB.tech },
             { name: "유지 산출합계", cell: "H14", value: maintB.total },
-            { name: "유지 조정금액", cell: "H15", value: costs.maintenance - maintB.total },
-            { name: "유지 최종합계", cell: "H17", value: costs.maintenance },
+            { name: "유지 조정금액", cell: "H15", value: adjMaintenance - maintB.total },
+            { name: "유지 최종합계", cell: "H17", value: adjMaintenance },
             { name: "투입인력", cell: "O6", value: state.results.maintenanceWorkers }
         ],
         "2.3 선임 산출내역": [
@@ -1160,8 +1185,8 @@ function generateMapping() {
             { name: "제경비", cell: "H12", value: 0 },
             { name: "기술료", cell: "H13", value: 0 },
             { name: "산출합계", cell: "H14", value: appAnnualLabor },
-            { name: "조정금액", cell: "H15", value: costs.appointment - appAnnualLabor },
-            { name: "최종합계", cell: "H17", value: costs.appointment },
+            { name: "조정금액", cell: "H15", value: adjAppointment - appAnnualLabor },
+            { name: "최종합계", cell: "H17", value: adjAppointment },
             { name: "투입인력", cell: "O6", value: appWorkers }
         ],
         "4. 성능점검 수량내역": [
@@ -1440,17 +1465,28 @@ document.querySelectorAll('.btn-adj').forEach(btn => {
         const area = state.floorArea || 0;
         if (area < 5000) return;
         const condition = lookupCondition(area);
-        const currentVal = state.condOverride[stateKey] ?? condition[stateKey];
+        const currentBase = state.condOverride[stateKey] ?? condition[stateKey];
 
-        // 새로운 값 계산 (0 미만 방지)
-        const newVal = Math.max(0, currentVal + adj);
-        state.condOverride[stateKey] = newVal;
+        // COST_FIELDS: 표시 금액(BASE×adjFactor) 기준으로 adj 적용 후 역산하여 BASE 저장
+        const isCostField = COST_FIELDS.has(targetId);
+        const _mult = state.useMultiplier ? state.multiplier : 1;
+        const _adj = _mult * (1 - state.discount / 100);
+
+        let newBase;
+        if (isCostField && _adj > 0) {
+            const currentAdj = Math.round(currentBase * _adj);
+            const newAdj = Math.max(0, currentAdj + adj);
+            newBase = Math.round(newAdj / _adj);
+        } else {
+            newBase = Math.max(0, currentBase + adj);
+        }
+        state.condOverride[stateKey] = newBase;
 
         // 연동 로직 (월/연간 단가)
         if (targetId === 'cond-monthly-appointment') {
-            state.condOverride.yearlyAppointment = newVal * 12;
+            state.condOverride.yearlyAppointment = newBase * 12;
         } else if (targetId === 'cond-yearly-appointment') {
-            state.condOverride.monthlyAppointment = newVal / 12;
+            state.condOverride.monthlyAppointment = newBase / 12;
         }
 
         calculate();
