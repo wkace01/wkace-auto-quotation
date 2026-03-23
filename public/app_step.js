@@ -1071,6 +1071,13 @@ function generateMapping() {
     // H10(직접인건비) = 1명 × 12개월 × 노임단가 / 직접경비·제경비·기술료 = 0
     const appAnnualLabor = appWorkers * 12 * (GRADE_WAGES[state.results.grade] || 0);
 
+    // 서비스 항목 텍스트 (진행 항목만 포함)
+    const serviceItems = [];
+    if (state.itemToggles.inspection)  serviceItems.push('성능점검 1회');
+    if (state.itemToggles.maintenance) serviceItems.push('유지보수관리점검 2회');
+    if (state.itemToggles.appointment) serviceItems.push('유지관리자 위탁 선임(비상주) 1년');
+    const serviceText = serviceItems.join(', ');
+
     return {
         "표지": [
             { name: "고객명", cell: "A10", value: state.customerName },
@@ -1087,7 +1094,11 @@ function generateMapping() {
             { name: "연면적", cell: "W18", value: state.floorArea },
             { name: "담당자명", cell: "J19", value: state.manager },
             { name: "담당자 연락처", cell: "W19", value: state.managerPhone },
+            { name: "서비스 항목", cell: "J20", value: serviceText },
             { name: "성능점검비", cell: "T24", value: costs.inspection },
+            { name: "성능점검 수량", cell: "P24", value: state.itemToggles.inspection  ? 1 : 0 },
+            { name: "유지점검 수량", cell: "P25", value: state.itemToggles.maintenance ? 1 : 0 },
+            { name: "위탁선임 수량", cell: "P26", value: state.itemToggles.appointment ? 1 : 0 },
             { name: "유지점검비", cell: "T25", value: costs.maintenance },
             { name: "위탁선임비", cell: "T26", value: costs.appointment },
             { name: "합계(할인전)", cell: "T27", value: subtotal },
