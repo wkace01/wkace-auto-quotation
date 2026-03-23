@@ -60,7 +60,7 @@ function calcLaborBreakdown(workers, grade) {
     const rows = GRADE_ORDER.map(g => ({
         grade: g,
         workers: g === grade ? workers : "",         // 해당 등급 아니면 빈칸
-        wage: g === grade ? GRADE_WAGES[g] : "",     // 해당 등급 아니면 단가도 빈칸
+        wage: g === grade && workers > 0 ? GRADE_WAGES[g] : "",  // 해당 등급 아니면, 또는 workers=0이면 빈칸
         amount: g === grade ? workers * GRADE_WAGES[g] : 0,
     }));
     const labor = workers * (GRADE_WAGES[grade] || 0);        // 직접인건비
@@ -1080,7 +1080,7 @@ function generateMapping() {
 
     return {
         "표지": [
-            { name: "고객명", cell: "A10", value: state.customerName },
+            { name: "고객명", cell: "A10", value: "고객명 : " + state.customerName },
             { name: "견적일", cell: "A18", value: formatKoreanDate(today) }
         ],
         "1. 견적서": [
