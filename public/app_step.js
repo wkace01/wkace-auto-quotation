@@ -54,6 +54,14 @@ const state = {
 
 // (Redundant constants removed, using window.CONSTANTS)
 
+// ---- 공통 유틸 ----
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+
+function getAdjFactor() {
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    return mult * (1 - state.discount / 100);
+}
+
 // ---- 인건비 산출 헬퍼 ----
 // workers: 투입인원, grade: 건물등급 → 해당 등급만 인원 배정, 나머지 0
 function calcLaborBreakdown(workers, grade) {
@@ -198,16 +206,13 @@ function updateConditionPanel(condition) {
     }
     const eff = getEffectiveCond(condition);
 
-    const fmt = (n) => Math.round(n).toLocaleString('ko-KR');
-
     // 패널 표시
     panel.style.display = 'block';
     document.getElementById('cond-grade').textContent = condition.grade;
     document.getElementById('cond-range-label').textContent = COND_RANGE_LABELS[condition.area] || '';
 
     // 배수·할인율 적용된 최종 조정 금액을 input에 표시
-    const mult = state.useMultiplier ? state.multiplier : 1;
-    const adjFactor = mult * (1 - state.discount / 100);
+    const adjFactor = getAdjFactor();
 
     const inputs = [
         { id: 'cond-monthly-appointment', val: fmt(Math.round(eff.monthlyAppointment * adjFactor)) },
@@ -236,7 +241,8 @@ function updateConditionPanel(condition) {
     document.getElementById('cond-discount-display').textContent = state.discount + '%';
 
     const baseSubtotal = eff.yearlyAppointment + eff.yearlyMaintenance + eff.yearlyInspection;
-    const subtotal = Math.round(baseSubtotal * mult); // mult는 line 209에서 이미 선언됨
+    const mult = state.useMultiplier ? state.multiplier : 1;
+    const subtotal = Math.round(baseSubtotal * mult);
     const discountAmount = Math.round(subtotal * (state.discount / 100));
     const subtotalAfterDiscount = subtotal - discountAmount;
     const vatAmount = state.includeVAT ? Math.round(subtotalAfterDiscount * 0.1) : 0;
@@ -321,14 +327,11 @@ function updateUI() {
 }
 
 function renderTabs() {
-    const fmt = n => Math.round(n).toLocaleString('ko-KR');
-
     // Tab 1: Summary
     const subtotal = state.results.costs.inspection + state.results.costs.maintenance + state.results.costs.appointment;
 
     // 할인율·조정 배수를 반영한 항목별 실시간 표시 금액
-    const mult = state.useMultiplier ? state.multiplier : 1;
-    const adjFactor = mult * (1 - state.discount / 100);
+    const adjFactor = getAdjFactor();
     const adjInspection  = state.itemToggles.inspection  ? Math.round(state.results.costs.inspection  * adjFactor) : 0;
     const adjMaintenance = state.itemToggles.maintenance ? Math.round(state.results.costs.maintenance * adjFactor) : 0;
     const adjAppointment = state.itemToggles.appointment ? Math.round(state.results.costs.appointment * adjFactor) : 0;
@@ -936,10 +939,9 @@ Object.entries(COND_INPUT_MAP).forEach(([elId, stateKey]) => {
         const val = parseFloat(raw);
         if (!isNaN(val)) {
             // COST_FIELDS는 표시값이 BASE×adjFactor이므로 역산하여 BASE override 저장
-            const _mult = state.useMultiplier ? state.multiplier : 1;
-            const _adj = _mult * (1 - state.discount / 100);
-            const baseVal = COST_FIELDS.has(elId) && _adj > 0
-                ? Math.round(val / _adj) : val;
+            const adjFactor = getAdjFactor();
+            const baseVal = COST_FIELDS.has(elId) && adjFactor > 0
+                ? Math.round(val / adjFactor) : val;
 
             state.condOverride[stateKey] = baseVal;
 
@@ -1076,8 +1078,7 @@ function generateMapping() {
     const subtotal = costs.inspection + costs.maintenance + costs.appointment;
 
     // 할인율·조정 배수를 반영한 항목별 조정 금액
-    const mult = state.useMultiplier ? state.multiplier : 1;
-    const adjFactor = mult * (1 - state.discount / 100);
+    const adjFactor = getAdjFactor();
     const adjInspection  = state.itemToggles.inspection  ? Math.round(costs.inspection  * adjFactor) : 0;
     const adjMaintenance = state.itemToggles.maintenance ? Math.round(costs.maintenance * adjFactor) : 0;
     const adjAppointment = state.itemToggles.appointment ? Math.round(costs.appointment * adjFactor) : 0;
@@ -1469,14 +1470,13 @@ document.querySelectorAll('.btn-adj').forEach(btn => {
 
         // COST_FIELDS: 표시 금액(BASE×adjFactor) 기준으로 adj 적용 후 역산하여 BASE 저장
         const isCostField = COST_FIELDS.has(targetId);
-        const _mult = state.useMultiplier ? state.multiplier : 1;
-        const _adj = _mult * (1 - state.discount / 100);
+        const adjFactor = getAdjFactor();
 
         let newBase;
-        if (isCostField && _adj > 0) {
-            const currentAdj = Math.round(currentBase * _adj);
+        if (isCostField && adjFactor > 0) {
+            const currentAdj = Math.round(currentBase * adjFactor);
             const newAdj = Math.max(0, currentAdj + adj);
-            newBase = Math.round(newAdj / _adj);
+            newBase = Math.round(newAdj / adjFactor);
         } else {
             newBase = Math.max(0, currentBase + adj);
         }
