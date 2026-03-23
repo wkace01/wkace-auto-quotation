@@ -16,7 +16,7 @@ const SOFFICE_PATH = process.platform === 'win32'
     : 'soffice';
 
 // Excel 템플릿 경로 (현재 폴더에 있는 파일명)
-const TEMPLATE_PATH = path.join(__dirname, '정보통신사업부 견적서 양식_ver1.xlsx');
+const TEMPLATE_PATH = path.join(__dirname, '정보통신사업부 견적서 양식_ver2.xlsx');
 // 임시 파일 저장 디렉토리
 const TEMP_DIR = path.join(__dirname, 'temp_pdf');
 
@@ -45,7 +45,7 @@ app.post('/generate-pdf', async (req, res) => {
     try {
         const { templateName, outputSheets, data, airtableInfo, fileNameMeta } = req.body;
         const actualData = data || req.body;
-        const actualTemplate = templateName || '정보통신사업부 견적서 양식_ver1.xlsx';
+        const actualTemplate = templateName || '정보통신사업부 견적서 양식_ver2.xlsx';
         const actualSheets = outputSheets || Object.keys(actualData);
 
         const workbook = await XlsxPopulate.fromFileAsync(path.join(__dirname, actualTemplate));
