@@ -1073,13 +1073,13 @@ function generateMapping() {
 
     return {
         "표지": [
-            { name: "고객명", cell: "F10", value: state.customerName },
+            { name: "고객명", cell: "A10", value: state.customerName },
             { name: "견적일", cell: "A18", value: formatKoreanDate(today) }
         ],
         "1. 견적서": [
             { name: "견적일", cell: "E8", value: today },
             { name: "고객명", cell: "E9", value: state.customerName },
-            { name: "영업 담당자", cell: "Q13", value: state.salesManager },
+            { name: "영업 담당자", cell: "Q12", value: state.salesManager },
             { name: "영업 담당자 연락처", cell: "X13", value: state.salesManagerPhone },
             { name: "주소", cell: "J16", value: state.address },
             { name: "사용승인일", cell: "J17", value: state.useAprDay },
@@ -1093,7 +1093,7 @@ function generateMapping() {
             { name: "합계(할인전)", cell: "T27", value: subtotal },
             { name: "최종 연간 금액", cell: "T28", value: costs.yearly },
             { name: "월 납부액", cell: "T29", value: costs.monthly },
-            { name: "부가세 여부", cell: "T30", value: state.includeVAT ? '부가세 포함' : '부가세 별도' },
+            { name: "부가세 여부", cell: "G22", value: state.includeVAT ? '(VAT 포함)' : '(VAT 별도)' },
             { name: "부가세 금액", cell: "T31", value: costs.vat || 0 },
             { name: "건물등급", cell: "Y26", value: state.results.grade }
         ],
