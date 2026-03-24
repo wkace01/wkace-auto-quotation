@@ -1,0 +1,194 @@
+{
+  "main": {
+    "id": "efa96c53e74dec20",
+    "type": "split",
+    "children": [
+      {
+        "id": "79d8ad68ca76ac55",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "eb57116c5a830386",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "PERFORMANCE_REPORT.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "PERFORMANCE_REPORT"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "c28db8ec91acd932",
+    "type": "split",
+    "children": [
+      {
+        "id": "dd04f9e22e916289",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2677c22ae69ce995",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "파일 탐색기"
+            }
+          },
+          {
+            "id": "9efa2a83af45da61",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "검색"
+            }
+          },
+          {
+            "id": "38f36dc389026fd3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "북마크"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "017638e87249febd",
+    "type": "split",
+    "children": [
+      {
+        "id": "1c89d932c033ad2d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "48a84a49f02e489f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "PROJECT_MAP.canvas",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "PROJECT_MAP 의 백링크"
+            }
+          },
+          {
+            "id": "66d297176f33985d",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "PROJECT_MAP.canvas",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "PROJECT_MAP 의 나가는 링크"
+            }
+          },
+          {
+            "id": "611a4d49ee5ff2e7",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "태그"
+            }
+          },
+          {
+            "id": "4e41f0960fcd00a2",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "PROJECT_MAP.canvas",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "PROJECT_MAP 의 개요"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:빠른 전환기 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 일일 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false,
+      "bases:새 베이스 생성하기": false,
+      "obsidian-excalidraw-plugin:New drawing": false
+    }
+  },
+  "active": "eb57116c5a830386",
+  "lastOpenFiles": [
+    "PROJECT_MAP.canvas",
+    "PERFORMANCE_REPORT.md",
+    "PERFORMANCE_REPORT.md.tmp.10340.1774318572128",
+    "PROJECT_MAP.canvas.tmp.10340.1774317422414",
+    "PROJECT_MAP.canvas.tmp.10340.1774317406343",
+    "VISUAL_05_엑셀셀매핑.md",
+    "VISUAL_05_엑셀셀매핑.md.tmp.10340.1774317376586",
+    "VISUAL_06_복잡도인포그래픽.excalidraw",
+    "VISUAL_04_PDF생성흐름.md",
+    "VISUAL_03_계산흐름.md",
+    "VISUAL_02_업무흐름.md",
+    "VISUAL_01_시스템구조.md",
+    "VIBE_CODING_REVIEW.md",
+    "VISUAL_04_PDF생성흐름.md.tmp.10340.1774316616078",
+    "VISUAL_03_계산흐름.md.tmp.10340.1774316610724",
+    "VISUAL_02_업무흐름.md.tmp.10340.1774316606421",
+    "VISUAL_03_계산흐름.md.tmp.10340.1774316342911",
+    "VISUAL_01_시스템구조.md.tmp.10340.1774316330456"
+  ]
+}
