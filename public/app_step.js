@@ -64,14 +64,14 @@ function getAdjFactor() {
 
 // ---- 인건비 산출 헬퍼 ----
 // workers: 투입인원, grade: 건물등급 → 해당 등급만 인원 배정, 나머지 0
-function calcLaborBreakdown(workers, grade) {
+function calcLaborBreakdown(workers, grade, wages = GRADE_WAGES) {
     const rows = GRADE_ORDER.map(g => ({
         grade: g,
         workers: g === grade ? workers : "",         // 해당 등급 아니면 빈칸
-        wage: g === grade && workers > 0 ? GRADE_WAGES[g] : "",  // 해당 등급 아니면, 또는 workers=0이면 빈칸
-        amount: g === grade ? workers * GRADE_WAGES[g] : 0,
+        wage: g === grade && workers > 0 ? wages[g] : "",  // 해당 등급 아니면, 또는 workers=0이면 빈칸
+        amount: g === grade ? workers * wages[g] : 0,
     }));
-    const labor = workers * (GRADE_WAGES[grade] || 0);        // 직접인건비
+    const labor = workers * (wages[grade] || 0);        // 직접인건비
     const expense = Math.round(labor * 0.1);                     // 직접경비 (인건비×10%)
     const general = Math.round(labor * 1.1);                     // 제경비   (인건비×110%)
     const tech = Math.round((labor + general) * 0.2);         // 기술료   ((인건비+제경비)×20%)
@@ -1091,11 +1091,11 @@ function generateMapping() {
     // "등급별 선임 인원수에 따른 1명"으로 할당을 원하므로,
     // 선임 상태(itemToggles.appointment)가 켜져있으면 1명으로 계산합니다.
     const appWorkers = state.itemToggles.appointment ? 1 : 0;
-    const appB = calcLaborBreakdown(appWorkers, state.results.grade);
+    const appB = calcLaborBreakdown(appWorkers, state.results.grade, APPOINTMENT_WAGES);
 
     // 2.3 선임 산출내역 전용: 템플릿 수식 H6=E6*F6*G6 (F6=12개월 자동입력)에 맞춰
-    // H10(직접인건비) = 1명 × 12개월 × 노임단가 / 직접경비·제경비·기술료 = 0
-    const appAnnualLabor = appWorkers * 12 * (GRADE_WAGES[state.results.grade] || 0);
+    // H10(직접인건비) = 1명 × 12개월 × 선임 노임단가 / 직접경비·제경비·기술료 = 0
+    const appAnnualLabor = appWorkers * 12 * (APPOINTMENT_WAGES[state.results.grade] || 0);
 
     // 서비스 항목 텍스트 (진행 항목만 포함)
     const serviceItems = [];
@@ -1186,7 +1186,6 @@ function generateMapping() {
             { name: "제경비", cell: "H12", value: 0 },
             { name: "기술료", cell: "H13", value: 0 },
             { name: "산출합계", cell: "H14", value: appAnnualLabor },
-            { name: "조정금액", cell: "H15", value: adjAppointment - appAnnualLabor },
             { name: "최종합계", cell: "H17", value: adjAppointment },
             { name: "투입인력", cell: "O6", value: appWorkers }
         ],
