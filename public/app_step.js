@@ -1119,7 +1119,9 @@ function generateMapping() {
             { name: "사용승인일", cell: "J17", value: state.useAprDay },
             { name: "주용도", cell: "J18", value: state.purpose },
             { name: "연면적", cell: "W18", value: state.floorArea },
-            { name: "담당자명", cell: "J19", value: state.manager },
+            { name: "담당자명", cell: "J19", value: state.manager
+                ? `${state.manager}${state.managerPosition ? ' ' + state.managerPosition : ''}님`
+                : '' },
             { name: "담당자 연락처", cell: "W19", value: state.managerPhone },
             { name: "서비스 항목", cell: "J20", value: serviceText },
             { name: "성능점검비", cell: "T24", value: adjInspection },

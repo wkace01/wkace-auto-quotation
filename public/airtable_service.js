@@ -164,7 +164,7 @@ window.airtableService = {
         // null/undefined 필드는 제외 (Airtable 링크드 필드에 null 전송 시 422 에러)
         const fields = {
             '고객 고유 ID': [customerId],
-            '견적 금액': results?.costs?.yearly ?? 0,
+            '견적 금액': (results?.costs?.yearly ?? 0) - (results?.costs?.vat ?? 0),
             '견적서 발송일': quoteDate
         };
         // 서비스 유형: 빈 배열도 오류 날 수 있으므로 값 있을 때만 추가
